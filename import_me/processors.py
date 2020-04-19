@@ -2,7 +2,7 @@ import datetime
 from decimal import Decimal, InvalidOperation
 from typing import Callable, Any, Iterable, Optional, Sequence
 
-from bdata_parser.exceptions import ColumnError, StopParsing
+from import_me.exceptions import ColumnError, StopParsing
 
 
 def strip(value: Any) -> Any:

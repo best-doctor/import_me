@@ -2,12 +2,12 @@ import datetime
 
 import pytest
 
-from bdata_parser.exceptions import StopParsing, ColumnError
-from bdata_parser.processors import (
+from import_me.exceptions import StopParsing, ColumnError
+from import_me.processors import (
     strip, lower, BaseProcessor, MultipleProcessor, DateTimeProcessor, DateProcessor,
     StringProcessor, StringIsNoneProcessor, BooleanProcessor, IntegerProcessor,
 )
-from bdata_parser.tests.conftest import raise_
+from import_me.tests.conftest import raise_
 
 
 @pytest.mark.parametrize(

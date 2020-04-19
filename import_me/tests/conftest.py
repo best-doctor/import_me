@@ -6,7 +6,7 @@ from openpyxl import Workbook
 from openpyxl.cell import Cell
 from openpyxl.worksheet.worksheet import Worksheet
 
-from bdata_parser.base import BaseParser, Column
+from import_me.base import BaseParser, Column
 
 
 def virtual_workbook(

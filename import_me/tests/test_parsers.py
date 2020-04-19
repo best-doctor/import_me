@@ -1,8 +1,8 @@
 import pytest
 
-from bdata_parser.base import BaseParser, Column
-from bdata_parser.exceptions import SkipRow, StopParsing, ColumnError
-from bdata_parser.tests.conftest import raise_
+from import_me.base import BaseParser, Column
+from import_me.exceptions import SkipRow, StopParsing, ColumnError
+from import_me.tests.conftest import raise_
 
 
 @pytest.mark.parametrize(

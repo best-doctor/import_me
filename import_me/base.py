@@ -7,7 +7,7 @@ from openpyxl import load_workbook, Workbook
 from openpyxl.utils.exceptions import InvalidFileException
 from openpyxl.worksheet.worksheet import Worksheet
 
-from bdata_parser.exceptions import ColumnError, ParserError, SkipRow, StopParsing
+from import_me.exceptions import ColumnError, ParserError, SkipRow, StopParsing
 
 if False:  # TYPE_CHECKING
     from typing import List, Callable, Dict, Tuple, Any, Type, Optional, Union, IO

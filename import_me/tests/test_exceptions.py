@@ -1,6 +1,6 @@
 import pytest
 
-from bdata_parser.exceptions import ParserError
+from import_me.exceptions import ParserError
 
 
 @pytest.mark.parametrize(
