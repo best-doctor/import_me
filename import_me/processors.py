@@ -67,6 +67,92 @@ class MultipleProcessor(BaseProcessor):
         return value
 
 
+class StringProcessor(BaseProcessor):
+    def process_value(self, value: Any) -> Optional[str]:
+        if not isinstance(value, str):
+            value = str(value)
+
+        value = value.strip()
+
+        if value:
+            return value
+
+
+class IntegerProcessor(BaseProcessor):
+    @staticmethod
+    def _process_float_value(value: float) -> Optional[int]:
+        if value.is_integer():
+            return int(value)
+
+    @staticmethod
+    def _process_str_value(value: str) -> Optional[int]:
+        str_value = value.strip()
+        if str_value and str_value.isdigit():
+            return int(str_value)
+
+    def process_value(self, value: Any) -> Any:
+        int_value = value
+        if isinstance(value, float):
+            int_value = self._process_float_value(value)
+        elif isinstance(value, str):
+            int_value = self._process_str_value(value)
+
+        if not isinstance(int_value, int):
+            raise ColumnError(f'{value} не является целым числом')
+
+        return int_value
+
+
+class FloatProcessor(BaseProcessor):
+    def process_value(self, value: Any) -> Any:
+        if isinstance(value, float):
+            float_value = value
+        elif isinstance(value, int):
+            float_value = float(value)
+        else:
+            try:
+                float_value = float(str(value).strip().replace(',', '.'))
+            except (ValueError, TypeError):
+                raise ColumnError(f'{value} не является числом с плавающей точкой')
+
+        return float_value
+
+
+class DecimalProcessor(BaseProcessor):
+    def process_value(self, value: Any) -> Any:
+        if isinstance(value, Decimal):
+            decimal_value = value
+        elif isinstance(value, (int, float)):
+            decimal_value = Decimal(value)
+        else:
+            try:
+                decimal_value = Decimal(str(value).strip().replace(',', '.'))
+            except InvalidOperation:
+                raise ColumnError(f'{value} не является числом с плавающей точкой')
+
+        return decimal_value
+
+
+class BooleanProcessor(BaseProcessor):
+    def __init__(self, true_values: Sequence = None, false_values: Sequence = None, **kwargs: Any) -> None:
+        super().__init__(**kwargs)
+        default_true_values = {True, 'True', 'true', '1', 'Да'}
+        default_false_values = {False, 'False', 'false', '0', 'Нет'}
+        self.true_values = set(true_values) if true_values else default_true_values
+        self.false_values = set(false_values) if false_values else default_false_values
+
+    def process_value(self, value: Any) -> Any:
+        raw_value = value
+        if isinstance(raw_value, str):
+            raw_value = raw_value.strip()
+        if raw_value in self.true_values:
+            return True
+        elif raw_value in self.false_values:
+            return False
+
+        raise ColumnError('Ожидается одно из значений: {0}'.format(list(self.true_values) + list(self.false_values)))
+
+
 class DateTimeProcessor(BaseProcessor):
     def __init__(self, formats: Iterable[str], **kwargs: Any) -> None:
         super().__init__(**kwargs)
@@ -98,17 +184,6 @@ class DateProcessor(DateTimeProcessor):
         return value.date()
 
 
-class StringProcessor(BaseProcessor):
-    def process_value(self, value: Any) -> Optional[str]:
-        if not isinstance(value, str):
-            value = str(value)
-
-        value = value.strip()
-
-        if value:
-            return value
-
-
 class EmailProcessor(StringProcessor):
     def process_value(self, value: Any) -> Optional[str]:
         base_value = super().process_value(value)
@@ -129,58 +204,3 @@ class StringIsNoneProcessor(BaseProcessor):
             if symbols.issubset(self.none_symbols):
                 return None
         return value
-
-
-class BooleanProcessor(BaseProcessor):
-    def __init__(self, true_values: Sequence = None, false_values: Sequence = None, **kwargs: Any) -> None:
-        super().__init__(**kwargs)
-        default_true_values = {True, 'True', 'true', '1', 'Да'}
-        default_false_values = {False, 'False', 'false', '0', 'Нет'}
-        self.true_values = set(true_values) if true_values else default_true_values
-        self.false_values = set(false_values) if false_values else default_false_values
-
-    def process_value(self, value: Any) -> Any:
-        raw_value = value
-        if isinstance(raw_value, str):
-            raw_value = raw_value.strip()
-        if raw_value in self.true_values:
-            return True
-        elif raw_value in self.false_values:
-            return False
-
-        raise ColumnError('Ожидается одно из значений: {0}'.format(list(self.true_values) + list(self.false_values)))
-
-
-class IntegerProcessor(BaseProcessor):
-    @staticmethod
-    def _process_float_value(value: float) -> Optional[int]:
-        if value.is_integer():
-            return int(value)
-
-    @staticmethod
-    def _process_str_value(value: str) -> Optional[int]:
-        str_value = value.strip()
-        if str_value and str_value.isdigit():
-            return int(str_value)
-
-    def process_value(self, value: Any) -> Any:
-        int_value = value
-        if isinstance(value, float):
-            int_value = self._process_float_value(value)
-        elif isinstance(value, str):
-            int_value = self._process_str_value(value)
-
-        if not isinstance(int_value, int):
-            raise ColumnError(f'{value} не является целым числом')
-
-        return int_value
-
-
-class DecimalProcessor(BaseProcessor):
-    def process_value(self, value: Any) -> Any:
-        try:
-            decimal_value = Decimal(str(value).strip().replace(',', '.'))
-        except InvalidOperation:
-            raise ColumnError(f'{value} не является числом с плавающей точкой')
-
-        return decimal_value

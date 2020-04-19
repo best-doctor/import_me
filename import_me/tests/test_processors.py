@@ -1,4 +1,5 @@
 import datetime
+from decimal import Decimal
 
 import pytest
 
@@ -6,6 +7,7 @@ from import_me.exceptions import StopParsing, ColumnError
 from import_me.processors import (
     strip, lower, BaseProcessor, MultipleProcessor, DateTimeProcessor, DateProcessor,
     StringProcessor, StringIsNoneProcessor, BooleanProcessor, IntegerProcessor,
+    DecimalProcessor, FloatProcessor,
 )
 from import_me.tests.conftest import raise_
 
@@ -271,10 +273,86 @@ def test_integer_processor(value, expected_value):
     (
         (10.1, '10.1 не является целым числом'),
         ('Не число', 'Не число не является целым числом'),
+        (
+            datetime.datetime(2020, 1, 1),
+            '2020-01-01 00:00:00 не является целым числом',
+        ),
     ),
 )
 def test_integer_processor_exception(value, expected_error_message):
     processor = IntegerProcessor()
+
+    with pytest.raises(ColumnError) as exc_info:
+        processor(value)
+    assert exc_info.value.messages == [expected_error_message]
+
+
+@pytest.mark.parametrize(
+    'value, expected_value',
+    (
+        (None, None),
+        (0, Decimal(0)),
+        (10, Decimal('10')),
+        (10.1, Decimal(10.1)),
+        ('10.123', Decimal('10.123')),
+        ('    123,22  \n', Decimal('123.22')),
+    ),
+)
+def test_decimal_processor(value, expected_value):
+    processor = DecimalProcessor()
+
+    assert processor(value) == expected_value
+
+
+@pytest.mark.parametrize(
+    'value, expected_error_message',
+    (
+        ('Строка', 'Строка не является числом с плавающей точкой'),
+        ('10.1.1', '10.1.1 не является числом с плавающей точкой'),
+        (
+            datetime.datetime(2020, 1, 1),
+            '2020-01-01 00:00:00 не является числом с плавающей точкой',
+        ),
+    ),
+)
+def test_decimal_processor_exception(value, expected_error_message):
+    processor = DecimalProcessor()
+
+    with pytest.raises(ColumnError) as exc_info:
+        processor(value)
+    assert exc_info.value.messages == [expected_error_message]
+
+
+@pytest.mark.parametrize(
+    'value, expected_value',
+    (
+        (None, None),
+        (0, float(0)),
+        (10, float(10)),
+        (10.1, float(10.1)),
+        ('10.123', float('10.123')),
+        ('    123,22  \n', float('123.22')),
+    ),
+)
+def test_float_processor(value, expected_value):
+    processor = FloatProcessor()
+
+    assert processor(value) == expected_value
+
+
+@pytest.mark.parametrize(
+    'value, expected_error_message',
+    (
+        ('Строка', 'Строка не является числом с плавающей точкой'),
+        ('10.1.1', '10.1.1 не является числом с плавающей точкой'),
+        (
+            datetime.datetime(2020, 1, 1),
+            '2020-01-01 00:00:00 не является числом с плавающей точкой',
+        ),
+    ),
+)
+def test_float_processor_exception(value, expected_error_message):
+    processor = FloatProcessor()
 
     with pytest.raises(ColumnError) as exc_info:
         processor(value)
