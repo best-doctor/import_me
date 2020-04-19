@@ -6,7 +6,9 @@ from openpyxl import Workbook
 from openpyxl.cell import Cell
 from openpyxl.worksheet.worksheet import Worksheet
 
-from import_me.base import BaseParser, Column
+from import_me.columns import Column
+from import_me.parsers.base import BaseParser
+from import_me.parsers.xlsx import BaseXLSXParser
 
 
 def virtual_workbook(
@@ -35,7 +37,7 @@ def virtual_workbook(
 
 
 @pytest.fixture
-def my_parser():
+def base_parser():
     class Parser(BaseParser):
         add_file_path = True
         add_row_index = True
@@ -48,15 +50,41 @@ def my_parser():
 @pytest.fixture
 def cell_factory():
     def cell(value):
+        return value
+    return cell
+
+
+@pytest.fixture
+def row_factory():
+    def row(values):
+        return list(values)
+
+    return row
+
+
+@pytest.fixture
+def xlsx_parser():
+    class Parser(BaseXLSXParser):
+        add_file_path = True
+        add_row_index = True
+        skip_empty_rows = True
+        columns = [Column('first_name', index=1)]
+
+    return Parser(file_path='test_file_path')
+
+
+@pytest.fixture
+def xlsx_cell_factory():
+    def cell(value):
         return Cell(Worksheet(Workbook()), value=value)
 
     return cell
 
 
 @pytest.fixture
-def row_factory(cell_factory):
+def xlsx_row_factory(xlsx_cell_factory):
     def row(values):
-        return [cell_factory(value) for value in values]
+        return [xlsx_cell_factory(value) for value in values]
 
     return row
 
