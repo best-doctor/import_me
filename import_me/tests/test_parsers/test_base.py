@@ -125,12 +125,12 @@ def test_clean_row_required_columns_exception():
     }
 
     with pytest.raises(SkipRow) as exc_info:
-        parser.clean_row_required_columns(row_data=row_data, row=tuple(row_data.values()), row_index=1)
+        parser.clean_row_required_columns(row_data=row_data, row=list(row_data.values()), row_index=0)
 
-    assert exc_info.value.messages == ['В строке 1 есть незаполненные колонки.']
+    assert exc_info.value.messages == ['В строке 0 есть незаполненные колонки.']
     assert parser.errors == [
-        'строка: 1, колонка: 1, Колонка column2 обязательна к заполнению.',
-        'строка: 1, колонка: 2, Колонка Custom Name обязательна к заполнению.',
+        'строка: 0, колонка: 1, Колонка column2 обязательна к заполнению.',
+        'строка: 0, колонка: 2, Колонка Custom Name обязательна к заполнению.',
     ]
 
 
@@ -189,6 +189,6 @@ def test_parser_custom_column_clean_method(workbook_factory):
 
     parser = Parser(file_path='file')
 
-    result = parser.parse_row(row=('column1_data', ), row_index=1)
+    result = parser.parse_row(row=['column1_data'], row_index=1)
 
     assert result == {'column1': 'any value'}

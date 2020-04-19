@@ -5,6 +5,73 @@ from import_me.exceptions import StopParsing
 from import_me.parsers.xlsx import BaseXLSXParser
 
 
+def test_base_xlsx_parser(xlsx_file_factory):
+    class XLSXParser(BaseXLSXParser):
+        columns = [
+            Column('first_name', index=0, header='First Name'),
+            Column('last_name', index=1, header='Last Name'),
+        ]
+
+    xlsx_file = xlsx_file_factory(
+        header=['First Name', 'Last Name'],
+        data=[
+            ['Ivan', 'Ivanov'],
+            ['Petr', 'Petrov'],
+        ],
+    )
+    parser = XLSXParser(file_path=xlsx_file.name)
+
+    parser()
+
+    assert parser.has_errors is False
+    assert parser.cleaned_data == [
+        {
+            'first_name': 'Ivan',
+            'last_name': 'Ivanov',
+            'row_index': 1,
+        },
+        {
+            'first_name': 'Petr',
+            'last_name': 'Petrov',
+            'row_index': 2,
+        },
+    ]
+
+
+def test_base_xlsx_parser_without_header(xlsx_file_factory):
+    class XLSXParser(BaseXLSXParser):
+        columns = [
+            Column('first_name', index=0),
+            Column('last_name', index=1),
+        ]
+        first_data_row_index = 0
+
+    xlsx_file = xlsx_file_factory(
+        data=[
+            ['Ivan', 'Ivanov'],
+            ['Petr', 'Petrov'],
+        ],
+        data_row_index=0,
+    )
+    parser = XLSXParser(file_path=xlsx_file.name)
+
+    parser()
+
+    assert parser.has_errors is False
+    assert parser.cleaned_data == [
+        {
+            'first_name': 'Ivan',
+            'last_name': 'Ivanov',
+            'row_index': 0,
+        },
+        {
+            'first_name': 'Petr',
+            'last_name': 'Petrov',
+            'row_index': 1,
+        },
+    ]
+
+
 def test_base_xlsx_parser_clean_column():
     class Parser(BaseXLSXParser):
         columns = [
@@ -94,7 +161,7 @@ def test_validate_worksheet_headers_errors(
         (False, [[None], ['column1_data']], [{'column1': None}, {'column1': 'column1_data'}]),
     ),
 )
-def test_parser_skip_empty_row(parser_skip_empty_rows, file_data, expected_data, workbook_factory):
+def test_parser_skip_empty_row(parser_skip_empty_rows, file_data, expected_data, xlsx_file_factory):
     class Parser(BaseXLSXParser):
         skip_empty_rows = parser_skip_empty_rows
         add_file_path = False
@@ -103,8 +170,8 @@ def test_parser_skip_empty_row(parser_skip_empty_rows, file_data, expected_data,
             Column('column1', index=0),
         ]
 
-    workbook = workbook_factory(header=['column1'], data=file_data, save_to_io=True)
-    parser = Parser(file_path=workbook.file)
+    xlsx_file = xlsx_file_factory(header=['column1'], data=file_data)
+    parser = Parser(file_path=xlsx_file.file)
 
     parser()
 

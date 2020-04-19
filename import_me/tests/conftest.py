@@ -1,6 +1,5 @@
 import csv
 import tempfile
-from typing import List, ValuesView, Optional, Union, IO, Any
 
 import pytest
 from openpyxl import Workbook
@@ -10,31 +9,6 @@ from openpyxl.worksheet.worksheet import Worksheet
 from import_me.columns import Column
 from import_me.parsers.base import BaseParser
 from import_me.parsers.xlsx import BaseXLSXParser
-
-
-def virtual_workbook(
-    data: List[ValuesView],
-    header: Optional[List[str]] = None,
-    n_preallocated_columns: int = 20,
-    save_to_io: bool = True,
-    suffix: str = '.xlsx',
-) -> Union[IO[Any], Workbook]:
-    if not header:
-        header = []
-    wb = Workbook()
-    ws = wb.active
-    ws.append(header)
-    for row in data:
-        workbook_row = list(row)
-        n_columns_to_allocate = n_preallocated_columns - len(workbook_row)
-        ws.append(workbook_row + [None for _ in range(n_columns_to_allocate)])
-
-    if save_to_io:
-        virtual_workbook = tempfile.NamedTemporaryFile(suffix='.xlsx')
-        wb.save(virtual_workbook.name)
-        return virtual_workbook
-    else:
-        return wb
 
 
 @pytest.fixture
@@ -92,19 +66,32 @@ def xlsx_row_factory(xlsx_cell_factory):
 
 @pytest.fixture
 def workbook_factory():
-    def workbook(header, data, header_row_index=0, save_to_io=False):
-        wb_header = []
-        wb_data = []
+    def _workbook_factory(header=None, data=None, header_row_index=0, data_row_index=1):
+        wb = Workbook()
+        ws = wb.active
 
-        if header_row_index > 0:
-            wb_data = [[]] * (header_row_index - 1)
-            wb_data.append(header)
-        else:
-            wb_header = header
+        if header is not None:
+            for _row_index in range(header_row_index):
+                ws.append([''] * len(header))
+            ws.append(header)
 
-        wb_data += data
-        return virtual_workbook(wb_data, wb_header, suffix='.xls', save_to_io=save_to_io)
-    return workbook
+        if data is not None:
+            for _row_index in range(header_row_index, data_row_index - 1):
+                ws.append([''] * len(data))
+            for row in data:
+                ws.append(row)
+        return wb
+    return _workbook_factory
+
+
+@pytest.fixture
+def xlsx_file_factory(workbook_factory):
+    def _xlsx_file_factory(header=None, data=None, header_row_index=0, data_row_index=1):
+        xlsx_file = tempfile.NamedTemporaryFile(suffix='.xlsx')
+        wb = workbook_factory(header, data, header_row_index, data_row_index)
+        wb.save(xlsx_file.name)
+        return xlsx_file
+    return _xlsx_file_factory
 
 
 @pytest.fixture

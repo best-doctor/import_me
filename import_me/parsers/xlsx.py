@@ -13,7 +13,7 @@ from import_me.exceptions import StopParsing
 class BaseXLSXParser(BaseParser):
     ws_index: int = 0
     header_row_index: Optional[int] = None
-    first_data_row_index: int = 2  # 1-based index
+    first_data_row_index: int = 1
     last_data_row_index: Optional[int] = None
 
     @property
@@ -33,7 +33,9 @@ class BaseXLSXParser(BaseParser):
         self.validate_worksheet(ws)
 
         row_index = self.first_data_row_index
-        for row in ws.iter_rows(min_row=self.first_data_row_index, max_row=self.last_data_row_index):
+        min_row = self.first_data_row_index + 1 if self.first_data_row_index is not None else None
+        max_row = self.last_data_row_index + 1 if self.last_data_row_index is not None else None
+        for row in ws.iter_rows(min_row=min_row, max_row=max_row):
             yield row_index, [cell.value for cell in row]
             row_index += 1
 
