@@ -10,7 +10,7 @@ if False:  # TYPE_CHECKING
 
 class ParserMixin:
     skip_empty_rows: bool = True
-    add_file_path: bool = True
+    add_file_path: bool = False
     add_row_index: bool = True
 
     def __init__(self, *args: Any, **kwargs: Any) -> None:
@@ -34,6 +34,7 @@ class BaseParser(ParserMixin):
         super().__init__(*args, **kwargs)
         self.file_path = file_path
         self.file_contents = file_contents
+        self._params = kwargs
 
     def iterate_file_rows(self) -> Iterator[Tuple[int, List[Any]]]:
         raise NotImplementedError

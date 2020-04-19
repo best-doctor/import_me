@@ -52,7 +52,7 @@ def test_parse_row(row_factory):
             Column('age', index=2, processor=lambda x: x if isinstance(x, int) else raise_(ColumnError())),
         ]
 
-    parser = Parser(None)
+    parser = Parser()
 
     with pytest.raises(SkipRow) as exc_info:
         parser.parse_row(row_factory(('Ivan', 'Ivanov', 'fail age')), 1)
@@ -63,7 +63,6 @@ def test_parse_row(row_factory):
         'first_name': 'Ivan',
         'last_name': 'Ivanov',
         'age': 34,
-        'file_path': None,
         'row_index': 1,
     }
 

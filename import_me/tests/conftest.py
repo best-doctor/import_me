@@ -1,3 +1,4 @@
+import csv
 import tempfile
 from typing import List, ValuesView, Optional, Union, IO, Any
 
@@ -104,6 +105,26 @@ def workbook_factory():
         wb_data += data
         return virtual_workbook(wb_data, wb_header, suffix='.xls', save_to_io=save_to_io)
     return workbook
+
+
+@pytest.fixture
+def csv_file_factory():
+    def _csv_file_factory(header=None, data=None, header_row_index=0, data_row_index=1):
+        csv_file = tempfile.NamedTemporaryFile(suffix='.csv')
+        with open(csv_file.name, 'w') as file:
+            writer = csv.writer(file)
+
+            if header is not None:
+                for _row_index in range(header_row_index):
+                    writer.writerow([''] * len(header))
+                writer.writerow(header)
+            if data is not None:
+                for _row_index in range(header_row_index, data_row_index - 1):
+                    writer.writerow([''] * len(data))
+                for row in data:
+                    writer.writerow(row)
+        return csv_file
+    return _csv_file_factory
 
 
 def raise_(ex, *args, **kwargs):
