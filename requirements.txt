@@ -1,5 +1,6 @@
 openpyxl==3.0.1
 xlrd==1.2.0
+email-validator==1.0.5
 pytest==5.4.1
 mypy==0.770
 

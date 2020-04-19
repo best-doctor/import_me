@@ -2,6 +2,8 @@ import datetime
 from decimal import Decimal, InvalidOperation
 from typing import Callable, Any, Iterable, Optional, Sequence
 
+from email_validator import validate_email, EmailNotValidError
+
 from import_me.exceptions import ColumnError, StopParsing
 
 
@@ -186,11 +188,14 @@ class DateProcessor(DateTimeProcessor):
 
 class EmailProcessor(StringProcessor):
     def process_value(self, value: Any) -> Optional[str]:
-        base_value = super().process_value(value)
-        if base_value and '@' not in base_value:
-            raise ColumnError('Некорректный почтовый адрес')
-        base_value = lower(base_value)
-        return base_value
+        email_value = super().process_value(value)
+        if email_value:
+            email_value = lower(email_value)
+            try:
+                validate_email(email_value)
+            except EmailNotValidError:
+                raise ColumnError(f'{value} не является корректным почтовым адресом')
+            return email_value
 
 
 class StringIsNoneProcessor(BaseProcessor):

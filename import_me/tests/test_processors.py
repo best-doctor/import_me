@@ -7,7 +7,7 @@ from import_me.exceptions import StopParsing, ColumnError
 from import_me.processors import (
     strip, lower, BaseProcessor, MultipleProcessor, DateTimeProcessor, DateProcessor,
     StringProcessor, StringIsNoneProcessor, BooleanProcessor, IntegerProcessor,
-    DecimalProcessor, FloatProcessor,
+    DecimalProcessor, FloatProcessor, EmailProcessor,
 )
 from import_me.tests.conftest import raise_
 
@@ -353,6 +353,46 @@ def test_float_processor(value, expected_value):
 )
 def test_float_processor_exception(value, expected_error_message):
     processor = FloatProcessor()
+
+    with pytest.raises(ColumnError) as exc_info:
+        processor(value)
+    assert exc_info.value.messages == [expected_error_message]
+
+
+@pytest.mark.parametrize(
+    'value, expected_value',
+    (
+        (None, None),
+        ('', None),
+        ('user@example.com', 'user@example.com'),
+        ('User@eXample.cOm', 'user@example.com'),
+        ('ivan.ivanov@example.com', 'ivan.ivanov@example.com'),
+    ),
+)
+def test_email_processor(value, expected_value):
+    processor = EmailProcessor()
+
+    assert processor(value) == expected_value
+
+
+@pytest.mark.parametrize(
+    'value, expected_error_message',
+    (
+        ('Строка', 'Строка не является корректным почтовым адресом'),
+        (1, '1 не является корректным почтовым адресом'),
+        (
+            datetime.datetime(2020, 1, 1),
+            '2020-01-01 00:00:00 не является корректным почтовым адресом',
+        ),
+        ('example.com', 'example.com не является корректным почтовым адресом'),
+        ('@example.com', '@example.com не является корректным почтовым адресом'),
+        ('user@', 'user@ не является корректным почтовым адресом'),
+        ('user@example', 'user@example не является корректным почтовым адресом'),
+        ('user@example.doesnotexists', 'user@example.doesnotexists не является корректным почтовым адресом'),
+    ),
+)
+def test_email_processor_exception(value, expected_error_message):
+    processor = EmailProcessor()
 
     with pytest.raises(ColumnError) as exc_info:
         processor(value)
