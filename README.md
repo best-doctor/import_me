@@ -6,7 +6,6 @@
 [![PyPI version](https://badge.fury.io/py/import-me.svg)](https://badge.fury.io/py/import-me)
 [![PyPI - Python Version](https://img.shields.io/pypi/pyversions/import-me)](https://pypi.org/project/import-me/)
 
-
 Python tool for importing and validating data from xlsx/xls/csv files.
 
 ## Example
