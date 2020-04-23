@@ -1,5 +1,5 @@
 test:
-	pytest .
+	python -m pytest
 
 types:
 	mypy .

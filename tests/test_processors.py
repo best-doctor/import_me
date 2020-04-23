@@ -9,7 +9,7 @@ from import_me.processors import (
     StringProcessor, StringIsNoneProcessor, BooleanProcessor, IntegerProcessor,
     DecimalProcessor, FloatProcessor, EmailProcessor,
 )
-from import_me.tests.conftest import raise_
+from conftest import raise_
 
 
 @pytest.mark.parametrize(
