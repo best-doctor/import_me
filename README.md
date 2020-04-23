@@ -3,12 +3,17 @@
 [![Build Status](https://travis-ci.org/best-doctor/import_me.svg?branch=master)](https://travis-ci.org/best-doctor/import_me)
 [![Maintainability](https://api.codeclimate.com/v1/badges/5e6923f90968e21955e4/maintainability)](https://codeclimate.com/github/best-doctor/import_me/maintainability)
 [![Test Coverage](https://api.codeclimate.com/v1/badges/5e6923f90968e21955e4/test_coverage)](https://codeclimate.com/github/best-doctor/import_me/test_coverage)
+[![PyPI version](https://badge.fury.io/py/import-me.svg)](https://badge.fury.io/py/import-me)
+[![PyPI - Python Version](https://img.shields.io/pypi/pyversions/import-me)](https://pypi.org/project/import-me/)
+
 
 Python tool for importing and validating data from xlsx/xls/csv files.
 
 ## Example
 
 ```jupyter
+from import_me import BaseXLSXParser, Column
+
 >>> class XLSXParser(BaseXLSXParser):
 ...     columns = [
 ...         Column('first_name', index=0, header='First Name'),
