@@ -6,6 +6,7 @@ types:
 
 style:
 	flake8 .
+	mdl README.md
 
 check:
 	make style
