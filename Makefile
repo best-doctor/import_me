@@ -1,5 +1,5 @@
 test:
-	python -m pytest
+	python -m pytest --cov=import_me --cov-report=xml
 
 types:
 	mypy .
