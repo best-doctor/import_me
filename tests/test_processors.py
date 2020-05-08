@@ -218,12 +218,12 @@ def test_string_is_none_processor(none_symbols, value, expected_value):
         ('True', True),
         ('true', True),
         (1, True),
-        ('Yes', True),
+        ('Да', True),
         (False, False),
         ('False', False),
         ('false', False),
         (0, False),
-        ('No', False),
+        ('Нет', False),
     ),
 )
 def test_boolean_processor(value, expected_value):
