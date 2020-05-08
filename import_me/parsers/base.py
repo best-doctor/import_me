@@ -64,7 +64,7 @@ class BaseParser(ParserMixin):
                 self.add_errors(e.messages, row_index=row_index, col_index=column.index)
 
         if row_has_errors:
-            raise SkipRow('Не обработана т.к. содержит ошибки')
+            raise SkipRow('Not processed because the string contains errors.')
 
         return self.clean_row(row_data, row, row_index)
 
@@ -103,13 +103,13 @@ class BaseParser(ParserMixin):
         for column in self.columns:
             if column.required and row_data.get(column.name) is None:
                 self.add_errors(
-                    f'Колонка {column.header or column.name} обязательна к заполнению.',
+                    f'Column {column.header or column.name} is required.',
                     row_index=row_index, col_index=column.index,
                 )
                 has_empty_required_columns = True
 
         if has_empty_required_columns:
-            raise SkipRow(f'В строке {row_index} есть незаполненные колонки.')
+            raise SkipRow(f'Row {row_index} contains blank columns.')
 
         return row_data
 
@@ -128,9 +128,9 @@ class BaseParser(ParserMixin):
         for message in messages:
             error = []
             if row_index is not None:
-                error.append(f'строка: {row_index}')
+                error.append(f'row: {row_index}')
             if col_index is not None:
-                error.append(f'колонка: {col_index}')
+                error.append(f'column: {col_index}')
             error.append(message)
             self.errors.append(', '.join(error))
 
