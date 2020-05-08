@@ -218,12 +218,12 @@ def test_string_is_none_processor(none_symbols, value, expected_value):
         ('True', True),
         ('true', True),
         (1, True),
-        ('Да', True),
+        ('Yes', True),
         (False, False),
         ('False', False),
         ('false', False),
         (0, False),
-        ('Нет', False),
+        ('No', False),
     ),
 )
 def test_boolean_processor(value, expected_value):
@@ -235,22 +235,22 @@ def test_boolean_processor(value, expected_value):
 @pytest.mark.parametrize(
     'value, expected_value',
     (
-        ('Истина', True),
-        ('Ложь', False),
+        ('True', True),
+        ('False', False),
     ),
 )
 def test_boolean_processor_custom_values(value, expected_value):
-    processor = BooleanProcessor(true_values=['Истина'], false_values=['Ложь'])
+    processor = BooleanProcessor(true_values=['True'], false_values=['False'])
 
     assert processor(value) is expected_value
 
 
 def test_boolean_processor_exception():
-    processor = BooleanProcessor(true_values=['Да'], false_values=['Нет'])
+    processor = BooleanProcessor(true_values=['Yes'], false_values=['No'])
 
     with pytest.raises(ColumnError) as exc_info:
-        processor('Не знаю')
-    assert exc_info.value.messages == ["Ожидается одно из значений: ['Да', 'Нет']"]
+        processor('I don\'t know')
+    assert exc_info.value.messages == ["It is expected one of values: ['Yes', 'No']"]
 
 
 @pytest.mark.parametrize(
@@ -271,11 +271,11 @@ def test_integer_processor(value, expected_value):
 @pytest.mark.parametrize(
     'value, expected_error_message',
     (
-        (10.1, '10.1 не является целым числом'),
-        ('Не число', 'Не число не является целым числом'),
+        (10.1, '10.1 not an integer'),
+        ('Not integer', 'Not integer not an integer'),
         (
             datetime.datetime(2020, 1, 1),
-            '2020-01-01 00:00:00 не является целым числом',
+            '2020-01-01 00:00:00 not an integer',
         ),
     ),
 )
@@ -307,11 +307,11 @@ def test_decimal_processor(value, expected_value):
 @pytest.mark.parametrize(
     'value, expected_error_message',
     (
-        ('Строка', 'Строка не является числом с плавающей точкой'),
-        ('10.1.1', '10.1.1 не является числом с плавающей точкой'),
+        ('String', 'String not a floating point number'),
+        ('10.1.1', '10.1.1 not a floating point number'),
         (
             datetime.datetime(2020, 1, 1),
-            '2020-01-01 00:00:00 не является числом с плавающей точкой',
+            '2020-01-01 00:00:00 not a floating point number',
         ),
     ),
 )
@@ -343,11 +343,11 @@ def test_float_processor(value, expected_value):
 @pytest.mark.parametrize(
     'value, expected_error_message',
     (
-        ('Строка', 'Строка не является числом с плавающей точкой'),
-        ('10.1.1', '10.1.1 не является числом с плавающей точкой'),
+        ('String', 'String not a floating point number'),
+        ('10.1.1', '10.1.1 not a floating point number'),
         (
             datetime.datetime(2020, 1, 1),
-            '2020-01-01 00:00:00 не является числом с плавающей точкой',
+            '2020-01-01 00:00:00 not a floating point number',
         ),
     ),
 )
@@ -378,17 +378,17 @@ def test_email_processor(value, expected_value):
 @pytest.mark.parametrize(
     'value, expected_error_message',
     (
-        ('Строка', 'Строка не является корректным почтовым адресом'),
-        (1, '1 не является корректным почтовым адресом'),
+        ('String', 'String is not a valid postal address'),
+        (1, '1 is not a valid postal address'),
         (
             datetime.datetime(2020, 1, 1),
-            '2020-01-01 00:00:00 не является корректным почтовым адресом',
+            '2020-01-01 00:00:00 is not a valid postal address',
         ),
-        ('example.com', 'example.com не является корректным почтовым адресом'),
-        ('@example.com', '@example.com не является корректным почтовым адресом'),
-        ('user@', 'user@ не является корректным почтовым адресом'),
-        ('user@example', 'user@example не является корректным почтовым адресом'),
-        ('user@example.doesnotexists', 'user@example.doesnotexists не является корректным почтовым адресом'),
+        ('example.com', 'example.com is not a valid postal address'),
+        ('@example.com', '@example.com is not a valid postal address'),
+        ('user@', 'user@ is not a valid postal address'),
+        ('user@example', 'user@example is not a valid postal address'),
+        ('user@example.doesnotexists', 'user@example.doesnotexists is not a valid postal address'),
     ),
 )
 def test_email_processor_exception(value, expected_error_message):
