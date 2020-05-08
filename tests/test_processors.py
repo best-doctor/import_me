@@ -271,7 +271,7 @@ def test_integer_processor(value, expected_value):
 @pytest.mark.parametrize(
     'value, expected_error_message',
     (
-        (10.1, '10.1 not an integer'),
+        (10.1, '10.1 is not an integer'),
         ('Not integer', 'Not integer is not an integer.'),
         (
             datetime.datetime(2020, 1, 1),
