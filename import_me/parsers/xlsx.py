@@ -76,9 +76,9 @@ class BaseXLSXParser(BaseParser):
                 if columns != expected_headers:
                     file_path = self.file_path or 'file'
                     raise StopParsing((
-                        f'Не верные названия колонок в файле {file_path}. '
-                        f'Колонки в файле: {columns}. '
-                        f'Ожидаемые колонки: {expected_headers}.'))
+                        f'Incorrect column names in the file: {file_path}. '
+                        f'Columns in file: {columns}. '
+                        f'Expected columns: {expected_headers}.'))
                 break
 
     def _load_workbook_from_xlsx(self) -> Workbook:
