@@ -76,7 +76,7 @@ class BaseXLSXParser(BaseParser):
                 if columns != expected_headers:
                     file_path = self.file_path or 'file'
                     raise StopParsing((
-                        f'Incorrect column\'s names in the file: {file_path}. '
+                        f'Incorrect column names in the file: {file_path}. '
                         f'Columns in file: {columns}. '
                         f'Expected columns: {expected_headers}.'))
                 break

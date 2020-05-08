@@ -249,7 +249,7 @@ def test_boolean_processor_exception():
     processor = BooleanProcessor(true_values=['Yes'], false_values=['No'])
 
     with pytest.raises(ColumnError) as exc_info:
-        processor('I don\'t know')
+        processor('I do not know.')
     assert exc_info.value.messages == ["It is expected one of values: ['Yes', 'No']"]
 
 
@@ -272,10 +272,10 @@ def test_integer_processor(value, expected_value):
     'value, expected_error_message',
     (
         (10.1, '10.1 not an integer'),
-        ('Not integer', 'Not integer not an integer'),
+        ('Not integer', 'Not integer is not an integer.'),
         (
             datetime.datetime(2020, 1, 1),
-            '2020-01-01 00:00:00 not an integer',
+            '2020-01-01 00:00:00 is not an integer.',
         ),
     ),
 )
@@ -307,11 +307,11 @@ def test_decimal_processor(value, expected_value):
 @pytest.mark.parametrize(
     'value, expected_error_message',
     (
-        ('String', 'String not a floating point number'),
-        ('10.1.1', '10.1.1 not a floating point number'),
+        ('String', 'String is not a floating point number.'),
+        ('10.1.1', '10.1.1 is not a floating point number.'),
         (
             datetime.datetime(2020, 1, 1),
-            '2020-01-01 00:00:00 not a floating point number',
+            '2020-01-01 00:00:00 is not a floating point number.',
         ),
     ),
 )
@@ -343,11 +343,11 @@ def test_float_processor(value, expected_value):
 @pytest.mark.parametrize(
     'value, expected_error_message',
     (
-        ('String', 'String not a floating point number'),
-        ('10.1.1', '10.1.1 not a floating point number'),
+        ('String', 'String is not a floating point number.'),
+        ('10.1.1', '10.1.1 is not a floating point number.'),
         (
             datetime.datetime(2020, 1, 1),
-            '2020-01-01 00:00:00 not a floating point number',
+            '2020-01-01 00:00:00 is not a floating point number.',
         ),
     ),
 )
@@ -378,17 +378,17 @@ def test_email_processor(value, expected_value):
 @pytest.mark.parametrize(
     'value, expected_error_message',
     (
-        ('String', 'String is not a valid postal address'),
-        (1, '1 is not a valid postal address'),
+        ('String', 'String is not a valid postal address.'),
+        (1, '1 is not a valid postal address.'),
         (
             datetime.datetime(2020, 1, 1),
-            '2020-01-01 00:00:00 is not a valid postal address',
+            '2020-01-01 00:00:00 is not a valid postal address.',
         ),
-        ('example.com', 'example.com is not a valid postal address'),
-        ('@example.com', '@example.com is not a valid postal address'),
-        ('user@', 'user@ is not a valid postal address'),
-        ('user@example', 'user@example is not a valid postal address'),
-        ('user@example.doesnotexists', 'user@example.doesnotexists is not a valid postal address'),
+        ('example.com', 'example.com is not a valid postal address.'),
+        ('@example.com', '@example.com is not a valid postal address.'),
+        ('user@', 'user@ is not a valid postal address.'),
+        ('user@example', 'user@example is not a valid postal address.'),
+        ('user@example.doesnotexists', 'user@example.doesnotexists is not a valid postal address.'),
     ),
 )
 def test_email_processor_exception(value, expected_error_message):

@@ -100,7 +100,7 @@ class IntegerProcessor(BaseProcessor):
             int_value = self._process_str_value(value)
 
         if not isinstance(int_value, int):
-            raise ColumnError(f'{value} not an integer')
+            raise ColumnError(f'{value} is not an integer.')
 
         return int_value
 
@@ -115,7 +115,7 @@ class FloatProcessor(BaseProcessor):
             try:
                 float_value = float(str(value).strip().replace(',', '.'))
             except (ValueError, TypeError):
-                raise ColumnError(f'{value} not a floating point number')
+                raise ColumnError(f'{value} is not a floating point number.')
 
         return float_value
 
@@ -130,7 +130,7 @@ class DecimalProcessor(BaseProcessor):
             try:
                 decimal_value = Decimal(str(value).strip().replace(',', '.'))
             except InvalidOperation:
-                raise ColumnError(f'{value} not a floating point number')
+                raise ColumnError(f'{value} is not a floating point number.')
 
         return decimal_value
 
@@ -168,7 +168,7 @@ class DateTimeProcessor(BaseProcessor):
         elif isinstance(value, datetime.date):
             value = datetime.datetime.combine(value, datetime.time.min)
         else:
-            raise ColumnError(f'Unable to convert to date {value}')
+            raise ColumnError(f'Unable to convert to date {value}.')
         return value
 
     def _get_datetime_from_string(self, value: str) -> datetime.datetime:
@@ -177,7 +177,7 @@ class DateTimeProcessor(BaseProcessor):
                 return datetime.datetime.strptime(value, date_format)
             except ValueError:
                 pass
-        raise ColumnError(f'Value "{value}" is not accordance with the format {self.formats}')
+        raise ColumnError(f'Value "{value}" is not accordance with the format {self.formats}.')
 
 
 class DateProcessor(DateTimeProcessor):
@@ -194,7 +194,7 @@ class EmailProcessor(StringProcessor):
             try:
                 validate_email(email_value)
             except EmailNotValidError:
-                raise ColumnError(f'{value} is not a valid postal address')
+                raise ColumnError(f'{value} is not a valid postal address.')
             return email_value
 
 
