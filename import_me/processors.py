@@ -209,3 +209,26 @@ class StringIsNoneProcessor(BaseProcessor):
             if symbols.issubset(self.none_symbols):
                 return None
         return value
+
+
+class EnumerateProcessor(BaseProcessor):
+    def _try_detect_type(self, value):
+        res = None
+        try:
+            res = int(value)
+        except ValueError:
+            try:
+                res = float(value)
+            except ValueError:
+                res = str(value).strip()
+        return res
+
+    def process_value(self, value: Any) -> Optional[str]:
+        stack = []
+
+        for item in value.split(','):
+            if not item:
+                continue
+            stack.append(self._try_detect_type(item))
+        
+        return tuple(stack)

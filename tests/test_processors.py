@@ -7,7 +7,7 @@ from import_me.exceptions import StopParsing, ColumnError
 from import_me.processors import (
     strip, lower, BaseProcessor, MultipleProcessor, DateTimeProcessor, DateProcessor,
     StringProcessor, StringIsNoneProcessor, BooleanProcessor, IntegerProcessor,
-    DecimalProcessor, FloatProcessor, EmailProcessor,
+    DecimalProcessor, FloatProcessor, EmailProcessor, EnumerateProcessor
 )
 from conftest import raise_
 
@@ -397,3 +397,27 @@ def test_email_processor_exception(value, expected_error_message):
     with pytest.raises(ColumnError) as exc_info:
         processor(value)
     assert exc_info.value.messages == [expected_error_message]
+
+
+@pytest.mark.parametrize(
+    'value, expected_value',
+    (   
+        ('1', (1,)),
+        ('1,', (1,)),
+        ('1,2', (1, 2)),
+        ('1,2,', (1, 2)),
+        ('1, 2', (1, 2)),
+        ('1, 2,', (1, 2)),
+        ('42.5, 13', (float(42.5), int(13))),
+        ('word-one, word-two', ('word-one', 'word-two')),
+        ('word-one, word-two,', ('word-one', 'word-two')),
+        ('word-one,word-two,', ('word-one', 'word-two')),
+        ('word-one,word-two', ('word-one', 'word-two')),
+        ('word1, word2,', ('word1', 'word2')),
+        ('1word, 2word,', ('1word', '2word')),
+        ('word_one,1,2.2,word_two', ('word_one', int(1), float(2.2), 'word_two')),
+    )
+)
+def test_enumerate_processor(value, expected_value):
+    processor = EnumerateProcessor()
+    assert processor(value) == expected_value
