@@ -8,7 +8,7 @@ class Column:
     ):
         self.name = name
         self.index = index
-        if processor:
+        if processor:  # noqa: IFSTMT001 (this is for mypy)
             self.processor = processor
         else:
             self.processor = lambda x: x
