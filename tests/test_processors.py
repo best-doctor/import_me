@@ -133,6 +133,12 @@ def test_multiple_processor_none_if_error():
         (['%Y-%m-%d', '%d.%m.%Y'], '20.07.2019', datetime.datetime(2019, 7, 20)),
         (['%d.%m.%Y'], None, None),
         (['%d.%m.%Y %H:%M:%S'], '20.07.2019 12:43:52', datetime.datetime(2019, 7, 20, 12, 43, 52)),
+        (None, '20.07.2019', datetime.datetime(2019, 7, 20)),
+        (None, '  20.07.2019  ', datetime.datetime(2019, 7, 20)),
+        (None, None, None),
+        (None, '20.07.2019 12:43:52', datetime.datetime(2019, 7, 20, 12, 43, 52)),
+        ([], '20.07.2019 12:43:52', datetime.datetime(2019, 7, 20, 12, 43, 52)),
+        ('', '20.07.2019 12:43:52', datetime.datetime(2019, 7, 20, 12, 43, 52)),
     ),
 )
 def test_datetime_processor(formats, value, expected_value):
@@ -148,6 +154,13 @@ def test_datetime_processor_error_value():
         assert processor('2019-01-01')
 
 
+def test_datetime_processor_error_date_value():
+    processor = DateTimeProcessor(formats=[])
+
+    with pytest.raises(ColumnError):
+        assert processor('2019_01_01')
+
+
 @pytest.mark.parametrize(
     'formats, value, expected_value',
     (
@@ -156,6 +169,11 @@ def test_datetime_processor_error_value():
         (['%Y-%m-%d', '%d.%m.%Y'], '20.07.2019', datetime.date(2019, 7, 20)),
         (['%d.%m.%Y'], None, None),
         (['%d.%m.%Y %H:%M:%S'], '20.07.2019 12:43:52', datetime.date(2019, 7, 20)),
+        (None, '20.07.2019', datetime.date(2019, 7, 20)),
+        (None, '  20.07.2019  ', datetime.date(2019, 7, 20)),
+        (None, None, None),
+        (None, '20.07.2019 12:43:52', datetime.date(2019, 7, 20)),
+        ([], '20.07.2019 12:43:52', datetime.date(2019, 7, 20)),
     ),
 )
 def test_date_processor(formats, value, expected_value):
@@ -169,6 +187,13 @@ def test_date_processor_error_value():
 
     with pytest.raises(ColumnError):
         assert processor('2019-01-01')
+
+
+def test_date_processor_error_date_value():
+    processor = DateProcessor(formats=None)
+
+    with pytest.raises(ColumnError):
+        assert processor('2019_01_01')
 
 
 @pytest.mark.parametrize(

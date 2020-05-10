@@ -1,7 +1,8 @@
 import datetime
 from decimal import Decimal, InvalidOperation
-from typing import Callable, Any, Iterable, Optional, Sequence
+from typing import Callable, Collection, Any, Optional, Sequence
 
+from dateutil.parser import parse
 from email_validator import validate_email, EmailNotValidError
 
 from import_me.exceptions import ColumnError, StopParsing
@@ -156,7 +157,7 @@ class BooleanProcessor(BaseProcessor):
 
 
 class DateTimeProcessor(BaseProcessor):
-    def __init__(self, formats: Iterable[str], **kwargs: Any) -> None:
+    def __init__(self, formats: Optional[Collection[str]], **kwargs: Any) -> None:
         super().__init__(**kwargs)
         self.formats = formats
 
@@ -172,12 +173,18 @@ class DateTimeProcessor(BaseProcessor):
         return value
 
     def _get_datetime_from_string(self, value: str) -> datetime.datetime:
-        for date_format in self.formats:
+        if self.formats is not None and len(self.formats) > 0:
+            for date_format in self.formats:
+                try:
+                    return datetime.datetime.strptime(value, date_format)
+                except ValueError:
+                    pass
+            raise ColumnError(f'Value "{value}" is not accordance with the format {self.formats}.')
+        else:
             try:
-                return datetime.datetime.strptime(value, date_format)
+                return parse(value)
             except ValueError:
-                pass
-        raise ColumnError(f'Value "{value}" is not accordance with the format {self.formats}.')
+                raise ColumnError(f'Unable to convert "{value}" to date.')
 
 
 class DateProcessor(DateTimeProcessor):
