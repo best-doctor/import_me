@@ -58,7 +58,7 @@ def test_parse_row(row_factory):
         parser.parse_row(row_factory(('Ivan', 'Ivanov', 'fail age')), 1)
     result = parser.parse_row(row_factory(('Ivan', 'Ivanov', 34)), 1)
 
-    assert exc_info.value.messages == ['Не обработана т.к. содержит ошибки']
+    assert exc_info.value.messages == ['Not processed because the string contains errors.']
     assert result == {
         'first_name': 'Ivan',
         'last_name': 'Ivanov',
@@ -127,28 +127,28 @@ def test_clean_row_required_columns_exception():
     with pytest.raises(SkipRow) as exc_info:
         parser.clean_row_required_columns(row_data=row_data, row=list(row_data.values()), row_index=0)
 
-    assert exc_info.value.messages == ['В строке 0 есть незаполненные колонки.']
+    assert exc_info.value.messages == ['Row 0 contains blank columns.']
     assert parser.errors == [
-        'строка: 0, колонка: 1, Колонка column2 обязательна к заполнению.',
-        'строка: 0, колонка: 2, Колонка Custom Name обязательна к заполнению.',
+        'row: 0, column: 1, Column column2 is required.',
+        'row: 0, column: 2, Column Custom Name is required.',
     ]
 
 
 @pytest.mark.parametrize(
     'messages, row_index, col_index, expected_parser_errors',
     (
-        ('Текст ошибки', None, None, ['Текст ошибки']),
-        ('Текст ошибки', 1, None, ['строка: 1, Текст ошибки']),
-        ('Текст ошибки', None, 1, ['колонка: 1, Текст ошибки']),
-        ('Текст ошибки', 2, 1, ['строка: 2, колонка: 1, Текст ошибки']),
-        (['Текст ошибки1', 'Текст ошибки2'], None, None, ['Текст ошибки1', 'Текст ошибки2']),
-        (['Текст ошибки1', 'Текст ошибки2'], 1, None, ['строка: 1, Текст ошибки1', 'строка: 1, Текст ошибки2']),
-        (['Текст ошибки1', 'Текст ошибки2'], None, 1, ['колонка: 1, Текст ошибки1', 'колонка: 1, Текст ошибки2']),
+        ('Error text', None, None, ['Error text']),
+        ('Error text', 1, None, ['row: 1, Error text']),
+        ('Error text', None, 1, ['column: 1, Error text']),
+        ('Error text', 2, 1, ['row: 2, column: 1, Error text']),
+        (['Error text1', 'Error text2'], None, None, ['Error text1', 'Error text2']),
+        (['Error text1', 'Error text2'], 1, None, ['row: 1, Error text1', 'row: 1, Error text2']),
+        (['Error text1', 'Error text2'], None, 1, ['column: 1, Error text1', 'column: 1, Error text2']),
         (
-            ['Текст ошибки1', 'Текст ошибки2'],
+            ['Error text1', 'Error text2'],
             2,
             1,
-            ['строка: 2, колонка: 1, Текст ошибки1', 'строка: 2, колонка: 1, Текст ошибки2'],
+            ['row: 2, column: 1, Error text1', 'row: 2, column: 1, Error text2'],
         ),
     ),
 )
@@ -171,7 +171,7 @@ def test_parser_has_errors():
 
     assert parser.has_errors is False
 
-    parser.add_errors('Ошибка', 0, 0)
+    parser.add_errors('Error', 0, 0)
 
     assert parser.has_errors is True
 
