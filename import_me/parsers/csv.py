@@ -2,7 +2,7 @@ import csv
 import io
 from contextlib import contextmanager
 
-from typing import Optional, Iterator, Tuple, List, Any
+from typing import Optional, Iterator, Tuple, List, Any, Dict
 
 from import_me.exceptions import StopParsing
 from import_me.parsers.base import BaseParser
@@ -24,11 +24,25 @@ class BaseCSVParser(BaseParser):
             raise StopParsing('Invalid row index.')
         return index
 
+    @property
+    def _open_file_params(self) -> Dict[str, Any]:
+        return {
+            key: self._params[key]
+            for key in ['encoding', 'buffering', 'newline', 'errors']
+            if key in self._params
+        }
+
+    @property
+    def _reader_params(self) -> Dict[str, Any]:
+        reader_params = [i for i in dir(csv.Dialect) if not i.startswith('_')]
+        reader_params.append('dialect')
+        return {key: self._params[key] for key in reader_params if key in self._params}
+
     @contextmanager
     def open_file(self) -> Iterator:
         if self.file_path:
             try:
-                file_obj = open(self.file_path, 'r')
+                file_obj = open(self.file_path, 'r', **self._open_file_params)
                 yield file_obj
             finally:
                 file_obj.close()
@@ -41,7 +55,7 @@ class BaseCSVParser(BaseParser):
 
     def iterate_file_rows(self) -> Iterator[Tuple[int, List[Any]]]:
         with self.open_file() as csv_file:
-            reader = csv.reader(csv_file, **self._params)
+            reader = csv.reader(csv_file, **self._reader_params)
 
             self.validate_headers(reader)
             csv_file.seek(0)

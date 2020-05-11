@@ -31,3 +31,36 @@ def test_base_csv_parser(csv_file_factory):
             'row_index': 2,
         },
     ]
+
+
+def test_base_csv_parser_additional_params(csv_file_factory):
+    class CSVParser(BaseCSVParser):
+        columns = [
+            Column('first_name', index=0, header='First Name'),
+            Column('last_name', index=1, header='Last Name'),
+        ]
+
+    csv_file = csv_file_factory(
+        header=['First Name', 'Last Name'],
+        data=[
+            ['Ivan', 'Ivanov'],
+            ['Petr', 'Petrov'],
+        ],
+        file_kwargs={'encoding': 'cp1251'},
+        writer_kwargs={'delimiter': ';'},
+    )
+    parser = CSVParser(file_path=csv_file.name, encoding='cp1251', delimiter=';')
+    parser()
+
+    assert parser.cleaned_data == [
+        {
+            'first_name': 'Ivan',
+            'last_name': 'Ivanov',
+            'row_index': 1,
+        },
+        {
+            'first_name': 'Petr',
+            'last_name': 'Petrov',
+            'row_index': 2,
+        },
+    ]

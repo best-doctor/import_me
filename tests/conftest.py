@@ -96,10 +96,14 @@ def xlsx_file_factory(workbook_factory):
 
 @pytest.fixture
 def csv_file_factory():
-    def _csv_file_factory(header=None, data=None, header_row_index=0, data_row_index=1):
+    def _csv_file_factory(
+        header=None, data=None, header_row_index=0, data_row_index=1, file_kwargs=None, writer_kwargs=None,
+    ):
+        file_kwargs = file_kwargs or {}
+        writer_kwargs = writer_kwargs or {}
         csv_file = tempfile.NamedTemporaryFile(suffix='.csv')
-        with open(csv_file.name, 'w') as file:
-            writer = csv.writer(file)
+        with open(csv_file.name, 'w', **file_kwargs) as file:
+            writer = csv.writer(file, **writer_kwargs)
 
             if header is not None:
                 for _row_index in range(header_row_index):
