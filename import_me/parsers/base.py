@@ -91,7 +91,7 @@ class BaseParser(ParserMixin):
         try:
             value = column.processor(value)
             value = self.clean_column(column, value)
-            value = self.clean_unique_column_value(column, value, row_index)
+            value = self.clean_unique_value(column, value, row_index)
         except StopParsing as e:
             raise e
         except Exception as e:
@@ -104,7 +104,7 @@ class BaseParser(ParserMixin):
             raise SkipRow
 
         row_data = self.clean_row_required_columns(row_data, row, row_index)
-        row_data = self.clean_row_unique_together_columns(row_data, row, row_index)
+        row_data = self.clean_unique_together_values(row_data, row, row_index)
 
         if self.add_file_path:
             row_data['file_path'] = self.file_path
@@ -129,7 +129,7 @@ class BaseParser(ParserMixin):
 
         return row_data
 
-    def clean_row_unique_together_columns(self, row_data: Dict, row: List[Any], row_index: int) -> Dict:
+    def clean_unique_together_values(self, row_data: Dict, row: List[Any], row_index: int) -> Dict:
         is_not_unique_row = False
 
         if not self._unique_together:
@@ -167,7 +167,7 @@ class BaseParser(ParserMixin):
             value = column_clean_func(value)
         return value
 
-    def clean_unique_column_value(self, column: Column, value: Any, row_index: int) -> Any:
+    def clean_unique_value(self, column: Column, value: Any, row_index: int) -> Any:
         if value is not None and column.unique:
             duplicate_row = self._unique_column_values[column.name].get(value, None)
             if duplicate_row:
