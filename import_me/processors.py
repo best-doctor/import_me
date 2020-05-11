@@ -225,7 +225,7 @@ class ChoiceProcessor(BaseProcessor):
         super().__init__(**kwargs)
 
     def process_value(self, value: Any) -> Any:
-        value = self.raw_value_processor.process_value(value)
+        value = self.raw_value_processor(value)
         try:
             return self.choices[value]
         except KeyError:
