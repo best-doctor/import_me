@@ -1,11 +1,14 @@
 from __future__ import annotations
+
+import collections
 import pathlib
+from functools import cached_property
 
 from import_me.columns import Column
 from import_me.exceptions import ColumnError, ParserError, SkipRow, StopParsing
 
 if False:  # TYPE_CHECKING
-    from typing import List, Dict, Tuple, Any, Type, Union, IO, Iterator
+    from typing import List, Dict, Tuple, Any, Type, Union, IO, Iterator, DefaultDict
 
 
 class ParserMixin:
@@ -27,6 +30,7 @@ class ParserMixin:
 
 class BaseParser(ParserMixin):
     columns: List[Column]
+    unique_together: List[List[str]]
 
     def __init__(
         self, file_path: Union[pathlib.Path, str] = None, file_contents: IO = None, *args: Any, **kwargs: Any,
@@ -35,6 +39,16 @@ class BaseParser(ParserMixin):
         self.file_path = file_path
         self.file_contents = file_contents
         self._params = kwargs
+        self._unique_column_values: DefaultDict[str, Dict[Any, int]] = collections.defaultdict(dict)
+        self._unique_together_values: DefaultDict[
+            Tuple[str, ...], Dict[Tuple[Any, ...], int],
+        ] = collections.defaultdict(dict)
+
+    @cached_property
+    def _unique_together(self) -> Tuple[Tuple[str, ...], ...]:
+        if hasattr(self, 'unique_together'):
+            return tuple((tuple(unique_together_columns) for unique_together_columns in self.unique_together))
+        return ()
 
     def iterate_file_rows(self) -> Iterator[Tuple[int, List[Any]]]:
         raise NotImplementedError
@@ -77,6 +91,7 @@ class BaseParser(ParserMixin):
         try:
             value = column.processor(value)
             value = self.clean_column(column, value)
+            value = self.clean_unique_column_value(column, value, row_index)
         except StopParsing as e:
             raise e
         except Exception as e:
@@ -89,6 +104,7 @@ class BaseParser(ParserMixin):
             raise SkipRow
 
         row_data = self.clean_row_required_columns(row_data, row, row_index)
+        row_data = self.clean_row_unique_together_columns(row_data, row, row_index)
 
         if self.add_file_path:
             row_data['file_path'] = self.file_path
@@ -113,10 +129,51 @@ class BaseParser(ParserMixin):
 
         return row_data
 
+    def clean_row_unique_together_columns(self, row_data: Dict, row: List[Any], row_index: int) -> Dict:
+        is_not_unique_row = False
+
+        if not self._unique_together:
+            return row_data
+
+        for unique_together_columns in self._unique_together:
+            values = tuple((
+                row_data[column_name]
+                for column_name in unique_together_columns
+                if row_data[column_name] is not None
+            ))
+            if len(values) == len(unique_together_columns):
+                duplicate_row = self._unique_together_values[unique_together_columns].get(values, None)
+                if duplicate_row:
+                    error = ', '.join((
+                        f'{column_name} ({column_value})'
+                        for column_name, column_value in zip(unique_together_columns, values)
+                    ))
+                    self.add_errors(
+                        f'{error} is a duplicate of row {duplicate_row}',
+                        row_index=row_index,
+                    )
+                    is_not_unique_row = True
+                else:
+                    self._unique_together_values[unique_together_columns][values] = row_index
+
+        if is_not_unique_row:
+            raise SkipRow(f'Row {row_index} is not unique.')
+
+        return row_data
+
     def clean_column(self, column: Column, value: Any) -> Any:
         column_clean_func = getattr(self, f'clean_column_{column.name}', None)
         if column_clean_func:
             value = column_clean_func(value)
+        return value
+
+    def clean_unique_column_value(self, column: Column, value: Any, row_index: int) -> Any:
+        if value is not None and column.unique:
+            duplicate_row = self._unique_column_values[column.name].get(value, None)
+            if duplicate_row:
+                raise ColumnError(f'value {value} is a duplicate of row {duplicate_row}')
+            else:
+                self._unique_column_values[column.name][value] = row_index
         return value
 
     def clean(self, data: List) -> List:
