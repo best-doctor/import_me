@@ -43,9 +43,12 @@ class BaseCSVParser(BaseParser):
         if self.file_path:
             try:
                 file_obj = open(self.file_path, 'r', **self._open_file_params)
-                yield file_obj
-            finally:
-                file_obj.close()
+                try:
+                    yield file_obj
+                finally:
+                    file_obj.close()
+            except (TypeError, IOError) as e:
+                raise e
         elif self.file_contents:
             data = self.file_contents.read()
             if isinstance(data, bytes):

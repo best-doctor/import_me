@@ -177,3 +177,65 @@ def test_parser_skip_empty_row(parser_skip_empty_rows, file_data, expected_data,
 
     assert parser.has_errors is False
     assert parser.cleaned_data == expected_data
+
+
+def test_parser_unique_column(xlsx_file_factory):
+    class Parser(BaseXLSXParser):
+        columns = [
+            Column('id', index=0, unique=True),
+        ]
+
+    xlsx_file = xlsx_file_factory(
+        header=['id'],
+        data=[
+            ['1'],
+            ['2'],
+            ['1'],
+        ],
+    )
+    parser = Parser(file_path=xlsx_file.file)
+
+    parser()
+
+    assert parser.has_errors is True
+    assert parser.errors == ['row: 3, column: 0, value 1 is a duplicate of row 1']
+    assert parser.cleaned_data == [
+        {'id': '1', 'row_index': 1},
+        {'id': '2', 'row_index': 2},
+    ]
+
+
+def test_parser_unique_together_column(xlsx_file_factory):
+    class Parser(BaseXLSXParser):
+        columns = [
+            Column('first_name', index=0),
+            Column('last_name', index=1),
+            Column('middle_name', index=2),
+        ]
+        unique_together = [
+            ['first_name', 'last_name'],
+            ['last_name', 'middle_name'],
+        ]
+
+    xlsx_file = xlsx_file_factory(
+        header=['first_name', 'last_name', 'middle_name'],
+        data=[
+            ['Ivan', 'Ivanov', 'Ivanovich'],
+            ['Ivan', 'Ivanov', 'Petrovich'],
+            ['Petr', 'Ivanov', 'Ivanovich'],
+            ['Petr', 'Petrov', 'Petrovich'],
+        ],
+    )
+    parser = Parser(file_path=xlsx_file.file)
+
+    parser()
+
+    assert parser.has_errors is True
+    assert parser.errors == [
+        'row: 2, first_name (Ivan), last_name (Ivanov) is a duplicate of row 1',
+        'row: 3, last_name (Ivanov), middle_name (Ivanovich) is a duplicate of row 1',
+    ]
+    assert parser.cleaned_data == [
+        {'first_name': 'Ivan', 'last_name': 'Ivanov', 'middle_name': 'Ivanovich', 'row_index': 1},
+        {'first_name': 'Petr', 'last_name': 'Petrov', 'middle_name': 'Petrovich', 'row_index': 4},
+    ]
