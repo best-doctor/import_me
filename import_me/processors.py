@@ -1,4 +1,5 @@
 import datetime
+import string
 from decimal import Decimal, InvalidOperation
 from typing import Callable, Collection, Any, Optional, Sequence, Dict
 
@@ -8,9 +9,9 @@ from email_validator import validate_email, EmailNotValidError
 from import_me.exceptions import ColumnError, StopParsing
 
 
-def strip(value: Any) -> Any:
+def strip(value: Any, strip_chars: str = string.whitespace) -> Any:
     if isinstance(value, str):
-        value = value.strip()
+        value = value.strip(strip_chars)
     return value
 
 
@@ -71,11 +72,18 @@ class MultipleProcessor(BaseProcessor):
 
 
 class StringProcessor(BaseProcessor):
+    def __init__(self, strip_chars: str = None, strip_whitespace: bool = True, **kwargs: Any) -> None:
+        super().__init__(**kwargs)
+
+        self.strip_chars = string.whitespace if strip_whitespace else ''
+        if strip_chars:
+            self.strip_chars += strip_chars
+
     def process_value(self, value: Any) -> Optional[str]:
         if not isinstance(value, str):
             value = str(value)
 
-        value = value.strip()
+        value = value.strip(self.strip_chars)
 
         if value:
             return value

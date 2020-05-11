@@ -1,4 +1,5 @@
 import datetime
+import string
 from decimal import Decimal
 
 import pytest
@@ -22,6 +23,20 @@ from conftest import raise_
 )
 def test_strip(value, expected_value):
     assert strip(value) == expected_value
+
+
+@pytest.mark.parametrize(
+    'value, strip_chars, expected_value',
+    (
+        (' * | test string | * ', string.whitespace, '* | test string | *'),
+        (' * | test string | * ', ' *', '| test string |'),
+        (' * | test string | * ', ' *|', 'test string'),
+        (1, ' *1', 1),
+        (None, ' *1', None),
+    ),
+)
+def test_strip_chars(value, strip_chars, expected_value):
+    assert strip(value, strip_chars=strip_chars) == expected_value
 
 
 @pytest.mark.parametrize(
@@ -200,6 +215,7 @@ def test_date_processor_error_date_value():
 @pytest.mark.parametrize(
     'value, expected_value',
     (
+        (None, None),
         (' Test string  ', 'Test string'),
         (123, '123'),
         (123.1, '123.1'),
@@ -211,6 +227,24 @@ def test_date_processor_error_date_value():
 )
 def test_string_processor(value, expected_value):
     processor = StringProcessor()
+
+    assert processor(value) == expected_value
+
+
+@pytest.mark.parametrize(
+    'value, strip_chars, strip_whitespace, expected_value',
+    (
+        (None, None, True, None),
+        (None, None, False, None),
+        (' * | Test string | *  \t\n ', None, True, '* | Test string | *'),
+        (' * | Test string | *  \t\n ', '*', True, '| Test string |'),
+        (' * | Test string | *  \t\n ', '*|', True, 'Test string'),
+        ('** \t\n Test string \t\n **', '*', False, ' \t\n Test string \t\n '),
+        ('** \t\n Test string \t\n **', ' *\n', False, '\t\n Test string \t'),
+    ),
+)
+def test_string_processor_strip(value, strip_chars, strip_whitespace, expected_value):
+    processor = StringProcessor(strip_chars=strip_chars, strip_whitespace=strip_whitespace)
 
     assert processor(value) == expected_value
 
