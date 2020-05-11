@@ -157,7 +157,7 @@ class BooleanProcessor(BaseProcessor):
 
 
 class DateTimeProcessor(BaseProcessor):
-    def __init__(self, formats: Optional[Collection[str]], **kwargs: Any) -> None:
+    def __init__(self, formats: Collection[str] = None, **kwargs: Any) -> None:
         super().__init__(**kwargs)
         self.formats = formats
 
@@ -173,18 +173,17 @@ class DateTimeProcessor(BaseProcessor):
         return value
 
     def _get_datetime_from_string(self, value: str) -> datetime.datetime:
-        if self.formats is not None and len(self.formats) > 0:
-            for date_format in self.formats:
-                try:
-                    return datetime.datetime.strptime(value, date_format)
-                except ValueError:
-                    pass
-            raise ColumnError(f'Value "{value}" is not accordance with the format {self.formats}.')
-        else:
+        if not self.formats:
             try:
                 return parse(value)
             except ValueError:
                 raise ColumnError(f'Unable to convert "{value}" to date.')
+        for date_format in self.formats:
+            try:
+                return datetime.datetime.strptime(value, date_format)
+            except ValueError:
+                pass
+        raise ColumnError(f'Value "{value}" is not accordance with the format {self.formats}.')
 
 
 class DateProcessor(DateTimeProcessor):

@@ -174,6 +174,7 @@ def test_datetime_processor_error_date_value():
         (None, None, None),
         (None, '20.07.2019 12:43:52', datetime.date(2019, 7, 20)),
         ([], '20.07.2019 12:43:52', datetime.date(2019, 7, 20)),
+        ('', '20.07.2019 12:43:52', datetime.date(2019, 7, 20)),
     ),
 )
 def test_date_processor(formats, value, expected_value):
