@@ -2,7 +2,6 @@ from __future__ import annotations
 
 import collections
 import pathlib
-from functools import cached_property
 
 from import_me.columns import Column
 from import_me.exceptions import ColumnError, ParserError, SkipRow, StopParsing
@@ -44,11 +43,15 @@ class BaseParser(ParserMixin):
             Tuple[str, ...], Dict[Tuple[Any, ...], int],
         ] = collections.defaultdict(dict)
 
-    @cached_property
+    @property
     def _unique_together(self) -> Tuple[Tuple[str, ...], ...]:
-        if hasattr(self, 'unique_together'):
-            return tuple((tuple(unique_together_columns) for unique_together_columns in self.unique_together))
-        return ()
+        if '_unique_together' not in self.__dict__:
+            if hasattr(self, 'unique_together'):
+                value = tuple((tuple(unique_together_columns) for unique_together_columns in self.unique_together))
+            else:
+                value = ()
+            self.__dict__['_unique_together'] = value
+        return self.__dict__['_unique_together']
 
     def iterate_file_rows(self) -> Iterator[Tuple[int, List[Any]]]:
         raise NotImplementedError
