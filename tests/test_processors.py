@@ -7,7 +7,7 @@ from import_me.exceptions import StopParsing, ColumnError
 from import_me.processors import (
     strip, lower, BaseProcessor, MultipleProcessor, DateTimeProcessor, DateProcessor,
     StringProcessor, StringIsNoneProcessor, BooleanProcessor, IntegerProcessor,
-    DecimalProcessor, FloatProcessor, EmailProcessor,
+    DecimalProcessor, FloatProcessor, EmailProcessor, ChoiceProcessor,
 )
 from conftest import raise_
 
@@ -419,6 +419,47 @@ def test_email_processor(value, expected_value):
 )
 def test_email_processor_exception(value, expected_error_message):
     processor = EmailProcessor()
+
+    with pytest.raises(ColumnError) as exc_info:
+        processor(value)
+    assert exc_info.value.messages == [expected_error_message]
+
+
+@pytest.mark.parametrize(
+    'value, choices, raw_value_processor, expected_value',
+    (
+        (None, None, None, None),
+        ('2', {'1': 'First', '2': 'Second'}, None, 'Second'),
+        (2, {'1': 'First', '2': 'Second'}, None, 'Second'),
+        (' 2 ', {'1': 'First', '2': 'Second'}, None, 'Second'),
+        (' 2 ', {1: 'First', 2: 'Second'}, IntegerProcessor(), 'Second'),
+        (
+            ' 31.12.2020 ',
+            {
+                datetime.date(2020, 12, 31): 'New Year',
+                datetime.date(2020, 11, 11): 'typical day',
+            },
+            DateProcessor(formats=['%d.%m.%Y']),
+            'New Year',
+        ),
+        ('True', {True: 'ok', False: 'fail'}, BooleanProcessor(), 'ok'),
+    ),
+)
+def test_choice_processor(value, choices, raw_value_processor, expected_value):
+    processor = ChoiceProcessor(choices=choices, raw_value_processor=raw_value_processor)
+
+    assert processor(value) == expected_value
+
+
+@pytest.mark.parametrize(
+    'value, choices, raw_value_processor, expected_error_message',
+    (
+        ('3', {'1': 'First', '2': 'Second'}, None, 'Unknown value 3.'),
+        ('Not integer', {1: 'First', 2: 'Second'}, IntegerProcessor(), 'Not integer is not an integer.'),
+    ),
+)
+def test_choice_processor_exception(value, choices, raw_value_processor, expected_error_message):
+    processor = ChoiceProcessor(choices=choices, raw_value_processor=raw_value_processor)
 
     with pytest.raises(ColumnError) as exc_info:
         processor(value)
