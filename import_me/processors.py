@@ -1,6 +1,6 @@
 import datetime
 from decimal import Decimal, InvalidOperation
-from typing import Callable, Collection, Any, Optional, Sequence
+from typing import Callable, Collection, Any, Optional, Sequence, Dict
 
 from dateutil.parser import parse
 from email_validator import validate_email, EmailNotValidError
@@ -216,3 +216,17 @@ class StringIsNoneProcessor(BaseProcessor):
             if symbols.issubset(self.none_symbols):
                 return None
         return value
+
+
+class ChoiceProcessor(BaseProcessor):
+    def __init__(self, choices: Dict[Any, Any], raw_value_processor: BaseProcessor = None, **kwargs: Any) -> None:
+        self.choices = choices
+        self.raw_value_processor = raw_value_processor or StringProcessor(**kwargs)
+        super().__init__(**kwargs)
+
+    def process_value(self, value: Any) -> Any:
+        value = self.raw_value_processor.process_value(value)
+        try:
+            return self.choices[value]
+        except KeyError:
+            raise ColumnError(f'Unknown value {value}.')
