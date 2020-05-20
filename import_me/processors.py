@@ -1,7 +1,7 @@
 import datetime
 import string
 from decimal import Decimal, InvalidOperation
-from typing import Callable, Collection, Any, Optional, Sequence, Dict
+from typing import Callable, Collection, Any, Optional, Sequence, Dict, List
 
 from dateutil.parser import parse
 from email_validator import validate_email, EmailNotValidError
@@ -237,3 +237,22 @@ class ChoiceProcessor(BaseProcessor):
             return self.choices[value]
         except KeyError:
             raise ColumnError(f'Unknown value {value}.')
+
+
+class ClassifierProcessor(BaseProcessor):
+    def __init__(self, choices: List[Any], raw_value_processor: BaseProcessor = None, **kwargs: Any) -> None:
+        self.choices = choices
+        self.raw_value_processor = raw_value_processor or (lambda raw_value: raw_value)
+        super().__init__(**kwargs)
+
+    def process_value(self, value: Any) -> Any:
+        value: Any = self.raw_value_processor(value)
+        for item, choice_function in self.choices:
+            if not callable(choice_function) and choice_function == value:
+                return item
+            try:
+                if choice_function(value):
+                    return item
+            except TypeError:
+                pass
+        raise ColumnError('Unknown value.')
