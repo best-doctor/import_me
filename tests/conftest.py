@@ -1,4 +1,5 @@
 import csv
+import datetime
 import tempfile
 
 import pytest
@@ -9,6 +10,27 @@ from openpyxl.worksheet.worksheet import Worksheet
 from import_me.columns import Column
 from import_me.parsers.base import BaseParser
 from import_me.parsers.xlsx import BaseXLSXParser
+
+
+choices_classifier_no_processor = [
+    ['e', 'A'],
+    ['d', lambda x: x in ['test', 'test2']],
+    ['a', lambda x: 0 <= x <= 10],
+    ['b', lambda x: 10 <= x <= 100],
+    ['c', lambda x: isinstance(x, str)],
+]
+
+
+choices_classifier_integer_processor = [
+    ['a', lambda x: 0 <= x <= 10],
+    ['b', lambda x: 10 <= x <= 100],
+]
+
+
+choices_classifier_datetime_processor = [
+    ['a', lambda x: datetime.date(2020, 1, 1) <= x <= datetime.date(2020, 12, 31)],
+    ['b', lambda x: datetime.date(2021, 1, 1) <= x <= datetime.date(2021, 12, 31)],
+]
 
 
 @pytest.fixture
