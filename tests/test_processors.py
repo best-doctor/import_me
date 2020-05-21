@@ -10,7 +10,10 @@ from import_me.processors import (
     StringProcessor, StringIsNoneProcessor, BooleanProcessor, IntegerProcessor,
     DecimalProcessor, FloatProcessor, EmailProcessor, ChoiceProcessor, ClassifierProcessor,
 )
-from conftest import raise_
+from conftest import (
+    raise_, choices_classifier_datetime_processor, choices_classifier_integer_processor,
+    choices_classifier_no_processor,
+)
 
 
 @pytest.mark.parametrize(
@@ -500,15 +503,6 @@ def test_choice_processor_exception(value, choices, raw_value_processor, expecte
     assert exc_info.value.messages == [expected_error_message]
 
 
-choices_classifier_no_processor = [
-    ['e', 'A'],
-    ['d', lambda x: x in ['test', 'test2']],
-    ['a', lambda x: 0 <= x <= 10],
-    ['b', lambda x: 10 <= x <= 100],
-    ['c', lambda x: isinstance(x, str)],
-]
-
-
 @pytest.mark.parametrize(
     'value, choices, raw_value_processor, expected_value',
     [
@@ -551,12 +545,6 @@ def test_classifier_processor_exception(value, choices, raw_value_processor, exp
     assert exc_info.value.messages == [expected_error_message]
 
 
-choices_classifier_integer_processor = [
-    ['a', lambda x: 0 <= x <= 10],
-    ['b', lambda x: 10 <= x <= 100],
-]
-
-
 @pytest.mark.parametrize(
     'value, choices, raw_value_processor, expected_value',
     [
@@ -592,12 +580,6 @@ def test_classifier_integer_processor_exception(value, choices, raw_value_proces
     with pytest.raises(ColumnError) as exc_info:
         processor(value)
     assert exc_info.value.messages == [expected_error_message]
-
-
-choices_classifier_datetime_processor = [
-    ['a', lambda x: datetime.date(2020, 1, 1) <= x <= datetime.date(2020, 12, 31)],
-    ['b', lambda x: datetime.date(2021, 1, 1) <= x <= datetime.date(2021, 12, 31)],
-]
 
 
 @pytest.mark.parametrize(
