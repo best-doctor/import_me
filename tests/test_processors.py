@@ -12,7 +12,7 @@ from import_me.processors import (
 )
 from conftest import (
     raise_, choices_classifier_datetime_processor, choices_classifier_integer_processor,
-    choices_classifier_no_processor,
+    choices_classifier_no_processor, datetime_for_test, datetime_for_test_with_user_timezone,
 )
 
 
@@ -144,36 +144,44 @@ def test_multiple_processor_none_if_error():
 
 
 @pytest.mark.parametrize(
-    'formats, value, expected_value',
+    'user_timezone, formats, value, expected_value',
     (
-        (['%d.%m.%Y'], '20.07.2019', datetime.datetime(2019, 7, 20)),
-        (['%d.%m.%Y'], '  20.07.2019  ', datetime.datetime(2019, 7, 20)),
-        (['%Y-%m-%d', '%d.%m.%Y'], '20.07.2019', datetime.datetime(2019, 7, 20)),
-        (['%d.%m.%Y'], None, None),
-        (['%d.%m.%Y %H:%M:%S'], '20.07.2019 12:43:52', datetime.datetime(2019, 7, 20, 12, 43, 52)),
-        (None, '20.07.2019', datetime.datetime(2019, 7, 20)),
-        (None, '  20.07.2019  ', datetime.datetime(2019, 7, 20)),
-        (None, None, None),
-        (None, '20.07.2019 12:43:52', datetime.datetime(2019, 7, 20, 12, 43, 52)),
-        ([], '20.07.2019 12:43:52', datetime.datetime(2019, 7, 20, 12, 43, 52)),
-        ('', '20.07.2019 12:43:52', datetime.datetime(2019, 7, 20, 12, 43, 52)),
+        (None, ['%d.%m.%Y'], '20.07.2019', datetime.datetime(2019, 7, 20)),
+        (None, ['%d.%m.%Y'], '  20.07.2019  ', datetime.datetime(2019, 7, 20)),
+        (None, ['%Y-%m-%d', '%d.%m.%Y'], '20.07.2019', datetime.datetime(2019, 7, 20)),
+        (None, ['%d.%m.%Y'], None, None),
+        (None, ['%d.%m.%Y %H:%M:%S'], '20.07.2019 12:43:52', datetime_for_test),
+        (None, None, '20.07.2019', datetime.datetime(2019, 7, 20)),
+        (None, None, '  20.07.2019  ', datetime.datetime(2019, 7, 20)),
+        (None, None, None, None),
+        (None, None, '20.07.2019 12:43:52', datetime_for_test),
+        (None, [], '20.07.2019 12:43:52', datetime_for_test),
+        (None, '', '20.07.2019 12:43:52', datetime_for_test),
+        ('Europe/Moscow', '', '20.07.2019 12:43:52', datetime_for_test_with_user_timezone),
     ),
 )
-def test_datetime_processor(formats, value, expected_value):
-    processor = DateTimeProcessor(formats=formats)
+def test_datetime_processor(user_timezone, formats, value, expected_value):
+    processor = DateTimeProcessor(formats=formats, user_timezone=user_timezone)
 
     assert processor(value) == expected_value
 
 
+def test_datetime_processor_error_timezone():
+    processor = DateTimeProcessor(formats=['%d.%m.%Y'], user_timezone='Europe/NoMoscow')
+
+    with pytest.raises(ColumnError):
+        assert processor('2019.01.01')
+
+
 def test_datetime_processor_error_value():
-    processor = DateTimeProcessor(formats=['%d.%m.%Y'])
+    processor = DateTimeProcessor(formats=['%d.%m.%Y'], user_timezone=None)
 
     with pytest.raises(ColumnError):
         assert processor('2019-01-01')
 
 
 def test_datetime_processor_error_date_value():
-    processor = DateTimeProcessor(formats=[])
+    processor = DateTimeProcessor(formats=[], user_timezone=None)
 
     with pytest.raises(ColumnError):
         assert processor('2019_01_01')
@@ -196,20 +204,20 @@ def test_datetime_processor_error_date_value():
     ),
 )
 def test_date_processor(formats, value, expected_value):
-    processor = DateProcessor(formats=formats)
+    processor = DateProcessor(formats=formats, user_timezone=None)
 
     assert processor(value) == expected_value
 
 
 def test_date_processor_error_value():
-    processor = DateProcessor(formats=['%d.%m.%Y'])
+    processor = DateProcessor(formats=['%d.%m.%Y'], user_timezone=None)
 
     with pytest.raises(ColumnError):
         assert processor('2019-01-01')
 
 
 def test_date_processor_error_date_value():
-    processor = DateProcessor(formats=None)
+    processor = DateProcessor(formats=None, user_timezone=None)
 
     with pytest.raises(ColumnError):
         assert processor('2019_01_01')
