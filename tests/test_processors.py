@@ -158,30 +158,30 @@ def test_multiple_processor_none_if_error():
         (None, [], '20.07.2019 12:43:52', datetime_for_test),
         (None, '', '20.07.2019 12:43:52', datetime_for_test),
         ('Europe/Moscow', '', '20.07.2019 12:43:52', datetime_for_test_with_user_timezone),
+        (
+            'Europe/Moscow',
+            ['%d.%m.%Y %H:%M:%S'],
+            datetime_for_test_with_user_timezone,
+            datetime_for_test_with_user_timezone,
+        ),
+        (None, ['%d.%m.%Y %H:%M:%S'], datetime_for_test_with_user_timezone, datetime_for_test_with_user_timezone),
     ),
 )
 def test_datetime_processor(user_timezone, formats, value, expected_value):
-    processor = DateTimeProcessor(formats=formats, user_timezone=user_timezone)
+    processor = DateTimeProcessor(formats=formats, timezone=user_timezone)
 
     assert processor(value) == expected_value
 
 
-def test_datetime_processor_error_timezone():
-    processor = DateTimeProcessor(formats=['%d.%m.%Y'], user_timezone='Europe/NoMoscow')
-
-    with pytest.raises(ColumnError):
-        assert processor('2019.01.01')
-
-
 def test_datetime_processor_error_value():
-    processor = DateTimeProcessor(formats=['%d.%m.%Y'], user_timezone=None)
+    processor = DateTimeProcessor(formats=['%d.%m.%Y'], timezone=None)
 
     with pytest.raises(ColumnError):
         assert processor('2019-01-01')
 
 
 def test_datetime_processor_error_date_value():
-    processor = DateTimeProcessor(formats=[], user_timezone=None)
+    processor = DateTimeProcessor(formats=[], timezone=None)
 
     with pytest.raises(ColumnError):
         assert processor('2019_01_01')
@@ -214,6 +214,12 @@ def test_date_processor_error_value():
 
     with pytest.raises(ColumnError):
         assert processor('2019-01-01')
+
+
+def test_datetime_processor_error_timezone():
+    processor = DateTimeProcessor(formats=['%d.%m.%Y'], user_timezone='Europe/NoMoscow')
+
+    assert processor('01.01.2019')
 
 
 def test_date_processor_error_date_value():

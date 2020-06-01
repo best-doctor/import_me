@@ -68,6 +68,7 @@ docs/_build/
 target/
 
 # pyenv
+/env
 .python-version
 
 # pipenv
