@@ -144,23 +144,24 @@ def test_multiple_processor_none_if_error():
 
 
 @pytest.mark.parametrize(
-    'formats, value, expected_value',
+    'formats, parser, value, expected_value',
     (
-        (['%d.%m.%Y'], '20.07.2019', datetime.datetime(2019, 7, 20)),
-        (['%d.%m.%Y'], '  20.07.2019  ', datetime.datetime(2019, 7, 20)),
-        (['%Y-%m-%d', '%d.%m.%Y'], '20.07.2019', datetime.datetime(2019, 7, 20)),
-        (['%d.%m.%Y'], None, None),
-        (['%d.%m.%Y %H:%M:%S'], '20.07.2019 12:43:52', datetime.datetime(2019, 7, 20, 12, 43, 52)),
-        (None, '20.07.2019', datetime.datetime(2019, 7, 20)),
-        (None, '  20.07.2019  ', datetime.datetime(2019, 7, 20)),
-        (None, None, None),
-        (None, '20.07.2019 12:43:52', datetime.datetime(2019, 7, 20, 12, 43, 52)),
-        ([], '20.07.2019 12:43:52', datetime.datetime(2019, 7, 20, 12, 43, 52)),
-        ('', '20.07.2019 12:43:52', datetime.datetime(2019, 7, 20, 12, 43, 52)),
+        (['%d.%m.%Y'], None, '20.07.2019', datetime.datetime(2019, 7, 20)),
+        (['%d.%m.%Y'], None, '  20.07.2019  ', datetime.datetime(2019, 7, 20)),
+        (['%Y-%m-%d', '%d.%m.%Y'], None, '20.07.2019', datetime.datetime(2019, 7, 20)),
+        (['%d.%m.%Y'], None, None, None),
+        (['%d.%m.%Y %H:%M:%S'], None, '20.07.2019 12:43:52', datetime.datetime(2019, 7, 20, 12, 43, 52)),
+        (None, None, '20.07.2019', datetime.datetime(2019, 7, 20)),
+        (None, None, '  20.07.2019  ', datetime.datetime(2019, 7, 20)),
+        (None, None, None, None),
+        (None, None, '20.07.2019 12:43:52', datetime.datetime(2019, 7, 20, 12, 43, 52)),
+        ([], None, '20.07.2019 12:43:52', datetime.datetime(2019, 7, 20, 12, 43, 52)),
+        ('', None, '20.07.2019 12:43:52', datetime.datetime(2019, 7, 20, 12, 43, 52)),
+        (None, lambda x: datetime.datetime(2020, 1, 1), '20.07.2019 12:43:52', datetime.datetime(2020, 1, 1)),
     ),
 )
-def test_datetime_processor(formats, value, expected_value):
-    processor = DateTimeProcessor(formats=formats)
+def test_datetime_processor(formats, parser, value, expected_value):
+    processor = DateTimeProcessor(formats=formats, parser=parser)
 
     assert processor(value) == expected_value
 
@@ -180,23 +181,24 @@ def test_datetime_processor_error_date_value():
 
 
 @pytest.mark.parametrize(
-    'formats, value, expected_value',
+    'formats, parser, value, expected_value',
     (
-        (['%d.%m.%Y'], '20.07.2019', datetime.date(2019, 7, 20)),
-        (['%d.%m.%Y'], '  20.07.2019  ', datetime.date(2019, 7, 20)),
-        (['%Y-%m-%d', '%d.%m.%Y'], '20.07.2019', datetime.date(2019, 7, 20)),
-        (['%d.%m.%Y'], None, None),
-        (['%d.%m.%Y %H:%M:%S'], '20.07.2019 12:43:52', datetime.date(2019, 7, 20)),
-        (None, '20.07.2019', datetime.date(2019, 7, 20)),
-        (None, '  20.07.2019  ', datetime.date(2019, 7, 20)),
-        (None, None, None),
-        (None, '20.07.2019 12:43:52', datetime.date(2019, 7, 20)),
-        ([], '20.07.2019 12:43:52', datetime.date(2019, 7, 20)),
-        ('', '20.07.2019 12:43:52', datetime.date(2019, 7, 20)),
+        (['%d.%m.%Y'], None, '20.07.2019', datetime.date(2019, 7, 20)),
+        (['%d.%m.%Y'], None, '  20.07.2019  ', datetime.date(2019, 7, 20)),
+        (['%Y-%m-%d', '%d.%m.%Y'], None, '20.07.2019', datetime.date(2019, 7, 20)),
+        (['%d.%m.%Y'], None, None, None),
+        (['%d.%m.%Y %H:%M:%S'], None, '20.07.2019 12:43:52', datetime.date(2019, 7, 20)),
+        (None, None, '20.07.2019', datetime.date(2019, 7, 20)),
+        (None, None, '  20.07.2019  ', datetime.date(2019, 7, 20)),
+        (None, None, None, None),
+        (None, None, '20.07.2019 12:43:52', datetime.date(2019, 7, 20)),
+        ([], None, '20.07.2019 12:43:52', datetime.date(2019, 7, 20)),
+        ('', None, '20.07.2019 12:43:52', datetime.date(2019, 7, 20)),
+        (None, lambda x: datetime.datetime(2020, 1, 1), '20.07.2019 12:43:52', datetime.date(2020, 1, 1)),
     ),
 )
-def test_date_processor(formats, value, expected_value):
-    processor = DateProcessor(formats=formats)
+def test_date_processor(formats, parser, value, expected_value):
+    processor = DateProcessor(formats=formats, parser=parser)
 
     assert processor(value) == expected_value
 
