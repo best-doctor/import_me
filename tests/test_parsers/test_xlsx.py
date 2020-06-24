@@ -110,7 +110,7 @@ def test_base_xlsx_parser_header_row_offset(header_row_index, first_data_row_ind
 )
 def test_validate_worksheet_headers(header_row_idx, workbook_factory):
     class Parser(BaseXLSXParser):
-        header_row_index = header_row_idx + 1
+        header_row_index = header_row_idx
         columns = [
             Column('column1', index=0, header='колонка1'),
             Column('column2', index=1, header='колонка2', validate_header=False),

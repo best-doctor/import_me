@@ -66,7 +66,7 @@ class BaseXLSXParser(BaseParser):
             if column.header and column.validate_header
         }
         if expected_headers and self.header_row_offset is not None:
-            for row in worksheet.iter_rows(min_row=self.header_row_offset):
+            for row in worksheet.iter_rows(min_row=self.header_row_offset + 1):
                 columns = {
                     idx: col.value.strip().lower()
                     if isinstance(col.value, str) else col.value
