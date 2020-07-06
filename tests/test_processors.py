@@ -12,7 +12,7 @@ from import_me.processors import (
 )
 from conftest import (
     raise_, choices_classifier_datetime_processor, choices_classifier_integer_processor,
-    choices_classifier_no_processor,
+    choices_classifier_no_processor, datetime_for_test_with_user_timezone,
 )
 
 
@@ -144,24 +144,32 @@ def test_multiple_processor_none_if_error():
 
 
 @pytest.mark.parametrize(
-    'formats, parser, value, expected_value',
+    'user_timezone, formats, parser, value, expected_value',
     (
-        (['%d.%m.%Y'], None, '20.07.2019', datetime.datetime(2019, 7, 20)),
-        (['%d.%m.%Y'], None, '  20.07.2019  ', datetime.datetime(2019, 7, 20)),
-        (['%Y-%m-%d', '%d.%m.%Y'], None, '20.07.2019', datetime.datetime(2019, 7, 20)),
-        (['%d.%m.%Y'], None, None, None),
-        (['%d.%m.%Y %H:%M:%S'], None, '20.07.2019 12:43:52', datetime.datetime(2019, 7, 20, 12, 43, 52)),
-        (None, None, '20.07.2019', datetime.datetime(2019, 7, 20)),
-        (None, None, '  20.07.2019  ', datetime.datetime(2019, 7, 20)),
-        (None, None, None, None),
-        (None, None, '20.07.2019 12:43:52', datetime.datetime(2019, 7, 20, 12, 43, 52)),
-        ([], None, '20.07.2019 12:43:52', datetime.datetime(2019, 7, 20, 12, 43, 52)),
-        ('', None, '20.07.2019 12:43:52', datetime.datetime(2019, 7, 20, 12, 43, 52)),
-        (None, lambda x: datetime.datetime(2020, 1, 1), '20.07.2019 12:43:52', datetime.datetime(2020, 1, 1)),
+        (None, ['%d.%m.%Y'], None, '20.07.2019', datetime.datetime(2019, 7, 20)),
+        (None, ['%d.%m.%Y'], None, '  20.07.2019  ', datetime.datetime(2019, 7, 20)),
+        (None, ['%Y-%m-%d', '%d.%m.%Y'], None, '20.07.2019', datetime.datetime(2019, 7, 20)),
+        (None, ['%d.%m.%Y'], None, None, None),
+        (None, ['%d.%m.%Y %H:%M:%S'], None, '20.07.2019 12:43:52', datetime.datetime(2019, 7, 20, 12, 43, 52)),
+        (None, None, None, '20.07.2019', datetime.datetime(2019, 7, 20)),
+        (None, None, None, '  20.07.2019  ', datetime.datetime(2019, 7, 20)),
+        (None, None, None, None, None),
+        (None, None, None, '20.07.2019 12:43:52', datetime.datetime(2019, 7, 20, 12, 43, 52)),
+        (None, [], None, '20.07.2019 12:43:52', datetime.datetime(2019, 7, 20, 12, 43, 52)),
+        (None, '', None, '20.07.2019 12:43:52', datetime.datetime(2019, 7, 20, 12, 43, 52)),
+        ('Europe/Moscow', '', None, '20.07.2019 12:43:52', datetime_for_test_with_user_timezone),
+        (
+            'Europe/Moscow',
+            ['%d.%m.%Y %H:%M:%S'],
+            None,
+            datetime_for_test_with_user_timezone,
+            datetime_for_test_with_user_timezone,
+        ),
+        (None, None, lambda x: datetime.datetime(2020, 1, 1), '20.07.2019 12:43:52', datetime.datetime(2020, 1, 1)),
     ),
 )
-def test_datetime_processor(formats, parser, value, expected_value):
-    processor = DateTimeProcessor(formats=formats, parser=parser)
+def test_datetime_processor(user_timezone, formats, parser, value, expected_value):
+    processor = DateTimeProcessor(formats=formats, parser=parser, timezone=user_timezone)
 
     assert processor(value) == expected_value
 
