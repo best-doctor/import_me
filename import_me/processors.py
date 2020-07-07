@@ -6,6 +6,7 @@ from typing import Callable, Collection, Any, Optional, Sequence, Dict, List
 from dateutil.parser import parse
 from email_validator import validate_email, EmailNotValidError
 
+from import_me.constants import WHITESPACES
 from import_me.exceptions import ColumnError, StopParsing
 
 
@@ -75,7 +76,7 @@ class StringProcessor(BaseProcessor):
     def __init__(self, strip_chars: str = None, strip_whitespace: bool = True, **kwargs: Any) -> None:
         super().__init__(**kwargs)
 
-        self.strip_chars = string.whitespace if strip_whitespace else ''
+        self.strip_chars = WHITESPACES if strip_whitespace else ''
         if strip_chars:
             self.strip_chars += strip_chars
 
