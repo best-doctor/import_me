@@ -1,7 +1,9 @@
 import datetime
 import string
+import pytz.exceptions
 from decimal import Decimal, InvalidOperation
-from typing import Callable, Collection, Any, Optional, Sequence, Dict, List
+from pytz import timezone as check_timezone
+from typing import Callable, Collection, Any, Optional, Sequence, Dict, List, Union
 
 from dateutil.parser import parse
 from email_validator import validate_email, EmailNotValidError
@@ -166,10 +168,18 @@ class BooleanProcessor(BaseProcessor):
 
 
 class DateTimeProcessor(BaseProcessor):
-    def __init__(self, formats: Collection[str] = None, parser: Callable = None, **kwargs: Any) -> None:
+    def __init__(self, formats: Collection[str] = None,
+                 parser: Callable = None, timezone: Union[str, None] = None, **kwargs: Any) -> None:
         super().__init__(**kwargs)
         self.formats = formats
         self.parser = parser or parse
+        self.user_timezone = None
+        if timezone:
+            try:
+                self.user_timezone = check_timezone(timezone)
+            except pytz.exceptions.UnknownTimeZoneError:
+                self.user_timezone = None
+                raise ValueError(f'Unknown time zone.')
 
     def process_value(self, value: Any) -> Any:
         if isinstance(value, str):
@@ -180,6 +190,8 @@ class DateTimeProcessor(BaseProcessor):
             value = datetime.datetime.combine(value, datetime.time.min)
         else:
             raise ColumnError(f'Unable to convert to date {value}.')
+        if self.user_timezone:
+            value = value.astimezone(self.user_timezone)
         return value
 
     def _get_datetime_from_string(self, value: str) -> datetime.datetime:
