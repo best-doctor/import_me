@@ -42,12 +42,12 @@ datetime_for_test_with_user_timezone = datetime_for_test.astimezone(user_timezon
 @pytest.fixture
 def base_parser():
     class Parser(BaseParser):
-        add_file_path = True
+        # add_file_path = True  # TODO: удалить, если clen_row не должен возвращать путь к файлу
         add_row_index = True
         skip_empty_rows = True
         columns = [Column('first_name', index=1)]
 
-    return Parser(file_path='test_file_path')
+    return Parser()
 
 
 @pytest.fixture
@@ -68,12 +68,12 @@ def row_factory():
 @pytest.fixture
 def xlsx_parser():
     class Parser(BaseXLSXParser):
-        add_file_path = True
+        # add_file_path = True  # TODO: удалить, если clean_row не должен возвращать путь к файлу
         add_row_index = True
         skip_empty_rows = True
         columns = [Column('first_name', index=1)]
 
-    return Parser(file_path='test_file_path')
+    return Parser()
 
 
 @pytest.fixture

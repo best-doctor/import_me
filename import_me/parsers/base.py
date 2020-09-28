@@ -12,7 +12,8 @@ if False:  # TYPE_CHECKING
 
 class ParserMixin:
     skip_empty_rows: bool = True
-    add_file_path: bool = False
+    # это поле использовалось для добавления пути к файлу в функции clean_row. Зачем?
+    # add_file_path: bool = False
     add_row_index: bool = True
 
     def __init__(self, *args: Any, **kwargs: Any) -> None:
@@ -23,20 +24,28 @@ class ParserMixin:
     def has_errors(self) -> bool:
         return bool(self.errors)
 
-    def __call__(self, raise_errors: bool = False, *args: Any, **kwargs: Any) -> None:
+    def __call__(self, file_path: Union[pathlib.Path, str],
+                 raise_errors: bool = False, *args: Any, **kwargs: Any) -> None:
         raise NotImplementedError
+
+
+class ParseResult:
+    def __init__(self):
+        self.has_errors: bool = False
+        self.errors: List[str] = []
+        self.cleaned_data: List[Dict[str, Any]] = []
 
 
 class BaseParser(ParserMixin):
     columns: List[Column]
     unique_together: List[List[str]]
+    file_path: Union[pathlib.Path, str] = None
+    file_contents: IO = None
 
-    def __init__(
-        self, file_path: Union[pathlib.Path, str] = None, file_contents: IO = None, *args: Any, **kwargs: Any,
-    ) -> None:
+    def __init__(self, *args: Any, **kwargs: Any,) -> None:
         super().__init__(*args, **kwargs)
-        self.file_path = file_path
-        self.file_contents = file_contents
+        if "file_path" in kwargs or "file_contents" in kwargs:
+            raise StopParsing("Parse method has been updated. Use parse(file_path) instead.")
         self._params = kwargs
         self._unique_column_values: DefaultDict[str, Dict[Any, int]] = collections.defaultdict(dict)
         self._unique_together_values: DefaultDict[
@@ -56,7 +65,14 @@ class BaseParser(ParserMixin):
     def iterate_file_rows(self) -> Iterator[Tuple[int, List[Any]]]:
         raise NotImplementedError
 
-    def parse(self) -> None:
+    def parse(self, file_path: Union[pathlib.Path, str] = None, file_contents: IO = None,) -> None:
+        # сообщение о несовместимости с предыдущими версиями
+        if file_path is None and file_contents is None:
+            raise StopParsing("Parse method has been updated. Use parse(file_path) instead.")
+        self.file_path = file_path
+        self.file_contents = file_contents
+
+        parse_result = ParseResult()
         data = []
 
         for row_index, row in self.iterate_file_rows():
@@ -67,9 +83,10 @@ class BaseParser(ParserMixin):
             else:
                 data.append(row_data)
 
-        self.cleaned_data = self.clean(data)
+        parse_result.cleaned_data = self.clean(data)
+        return parse_result
 
-    def parse_row(self, row: List[Any], row_index: int) -> Dict:
+    def parse_row(self, parse_result: ParseResult, row: List[Any], row_index: int) -> Dict:
         row_data = {}
         row_has_errors = False
 
@@ -78,12 +95,12 @@ class BaseParser(ParserMixin):
                 row_data[column.name] = self.parse_column(row, column, row_index)
             except ColumnError as e:
                 row_has_errors = True
-                self.add_errors(e.messages, row_index=row_index, col_index=column.index)
+                self.add_errors(parse_result, e.messages, row_index=row_index, col_index=column.index)
 
         if row_has_errors:
             raise SkipRow('Not processed because the string contains errors.')
 
-        return self.clean_row(row_data, row, row_index)
+        return self.clean_row(parse_result, row_data, row, row_index)
 
     def parse_column(self, row: List[Any], column: Column, row_index: int) -> Any:
         try:
@@ -102,26 +119,30 @@ class BaseParser(ParserMixin):
 
         return value
 
-    def clean_row(self, row_data: Dict, row: List[Any], row_index: int) -> Dict:
+    def clean_row(self, parse_result: ParseResult, row_data: Dict, row: List[Any], row_index: int) -> Dict:
         if self.skip_empty_rows and all((row_data.get(column.name) is None for column in self.columns)):
             raise SkipRow
 
-        row_data = self.clean_row_required_columns(row_data, row, row_index)
-        row_data = self.clean_unique_together_values(row_data, row, row_index)
+        row_data = self.clean_row_required_columns(parse_result, row_data, row, row_index)
+        row_data = self.clean_unique_together_values(parse_result, row_data, row, row_index)
 
-        if self.add_file_path:
-            row_data['file_path'] = self.file_path
+        # clean_row не может вызываться без parse, т.е. file_path не может тут быть определён
+        # if self.add_file_path:
+        #   row_data['file_path'] = self.file_path
         if self.add_row_index:
             row_data['row_index'] = row_index
 
         return row_data
 
-    def clean_row_required_columns(self, row_data: Dict, row: List[Any], row_index: int) -> Dict:
+    def clean_row_required_columns(
+            self, parse_result: ParseResult, row_data: Dict, row: List[Any], row_index: int) -> Dict:
+
         has_empty_required_columns = False
 
         for column in self.columns:
             if column.required and row_data.get(column.name) is None:
                 self.add_errors(
+                    parse_result,
                     f'Column {column.header or column.name} is required.',
                     row_index=row_index, col_index=column.index,
                 )
@@ -132,7 +153,8 @@ class BaseParser(ParserMixin):
 
         return row_data
 
-    def clean_unique_together_values(self, row_data: Dict, row: List[Any], row_index: int) -> Dict:
+    def clean_unique_together_values(
+            self, parse_result: ParseResult, row_data: Dict, row: List[Any], row_index: int) -> Dict:
         is_not_unique_row = False
 
         if not self._unique_together:
@@ -152,6 +174,7 @@ class BaseParser(ParserMixin):
                         for column_name, column_value in zip(unique_together_columns, values)
                     ))
                     self.add_errors(
+                        parse_result,
                         f'{error} is a duplicate of row {duplicate_row}',
                         row_index=row_index,
                     )
@@ -182,9 +205,11 @@ class BaseParser(ParserMixin):
     def clean(self, data: List) -> List:
         return data
 
-    def add_errors(self, messages: Union[str, List], row_index: int = None, col_index: int = None) -> None:
+    def add_errors(self, parse_result: ParseResult, messages: Union[str, List],
+                   row_index: int = None, col_index: int = None) -> None:
         if not isinstance(messages, list):
             messages = [messages]
+        parse_result.has_errors = len(messages) > 0
         for message in messages:
             error = []
             if row_index is not None:
@@ -192,11 +217,12 @@ class BaseParser(ParserMixin):
             if col_index is not None:
                 error.append(f'column: {col_index}')
             error.append(message)
-            self.errors.append(', '.join(error))
+            parse_result.errors.append(', '.join(error))
 
-    def __call__(self, raise_errors: bool = False, *args: Any, **kwargs: Any) -> None:
+    def __call__(self, file_path: Union[pathlib.Path, str], file_contents: IO = None,
+                 raise_errors: bool = False, *args: Any, **kwargs: Any) -> None:
         try:
-            self.parse()
+            self.parse(file_path=file_path, file_contents=file_contents)
         except Exception as e:
             messages = getattr(e, 'messages', str(e))
             self.add_errors(messages)

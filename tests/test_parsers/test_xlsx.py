@@ -82,7 +82,7 @@ def test_base_xlsx_parser_clean_column():
         def clean_column_last_name(self, value):
             return f'Modified {value}'
 
-    parser = Parser(file_path=None)
+    parser = Parser()
 
     assert parser.clean_column(parser.columns[0], 'Test Last Name') == 'Modified Test Last Name'
     assert parser.clean_column(parser.columns[1], 'Test First Name') == 'Test First Name'
@@ -97,7 +97,7 @@ def test_base_xlsx_parser_clean_column():
     ),
 )
 def test_base_xlsx_parser_header_row_offset(header_row_index, first_data_row_index, expected_result):
-    parser = BaseXLSXParser(file_path=None)
+    parser = BaseXLSXParser()
     parser.header_row_index = header_row_index
     parser.first_data_row_index = first_data_row_index
 
@@ -164,7 +164,7 @@ def test_validate_worksheet_headers_errors(
 def test_parser_skip_empty_row(parser_skip_empty_rows, file_data, expected_data, xlsx_file_factory):
     class Parser(BaseXLSXParser):
         skip_empty_rows = parser_skip_empty_rows
-        add_file_path = False
+        # add_file_path = False  # TODO: удалить, если clean_row не должен возвращать путь к файлу
         add_row_index = False
         columns = [
             Column('column1', index=0),
