@@ -154,6 +154,7 @@ def test_multiple_processor_none_if_error():
         (None, None, None, '20.07.2019', datetime.datetime(2019, 7, 20)),
         (None, None, None, '  20.07.2019  ', datetime.datetime(2019, 7, 20)),
         (None, None, None, None, None),
+        (None, None, None, ' \xa0\n', None),
         (None, None, None, '20.07.2019 12:43:52', datetime.datetime(2019, 7, 20, 12, 43, 52)),
         (None, [], None, '20.07.2019 12:43:52', datetime.datetime(2019, 7, 20, 12, 43, 52)),
         (None, '', None, '20.07.2019 12:43:52', datetime.datetime(2019, 7, 20, 12, 43, 52)),
@@ -199,6 +200,7 @@ def test_datetime_processor_error_date_value():
         (None, None, '20.07.2019', datetime.date(2019, 7, 20)),
         (None, None, '  20.07.2019  ', datetime.date(2019, 7, 20)),
         (None, None, None, None),
+        (None, None, ' \xa0\n', None),
         (None, None, '20.07.2019 12:43:52', datetime.date(2019, 7, 20)),
         ([], None, '20.07.2019 12:43:52', datetime.date(2019, 7, 20)),
         ('', None, '20.07.2019 12:43:52', datetime.date(2019, 7, 20)),
@@ -300,6 +302,7 @@ def test_string_is_none_processor(none_symbols, value, expected_value):
         ('false', False),
         (0, False),
         ('Нет', False),
+        (' \xa0\n', None),
     ),
 )
 def test_boolean_processor(value, expected_value):
@@ -336,6 +339,7 @@ def test_boolean_processor_exception():
         (10, 10),
         (10.0, 10),
         ('  10  ', 10),
+        (' \xa0\n', None),
     ),
 )
 def test_integer_processor(value, expected_value):
@@ -372,6 +376,7 @@ def test_integer_processor_exception(value, expected_error_message):
         (10.1, Decimal(10.1)),
         ('10.123', Decimal('10.123')),
         ('    123,22  \n', Decimal('123.22')),
+        (' \xa0\n', None),
     ),
 )
 def test_decimal_processor(value, expected_value):
@@ -408,6 +413,7 @@ def test_decimal_processor_exception(value, expected_error_message):
         (10.1, float(10.1)),
         ('10.123', float('10.123')),
         ('    123,22  \n', float('123.22')),
+        (' \xa0\n', None),
     ),
 )
 def test_float_processor(value, expected_value):
@@ -440,6 +446,7 @@ def test_float_processor_exception(value, expected_error_message):
     (
         (None, None),
         ('', None),
+        (' \xa0\n', None),
         ('user@example.com', 'user@example.com'),
         ('User@eXample.cOm', 'user@example.com'),
         ('ivan.ivanov@example.com', 'ivan.ivanov@example.com'),
@@ -479,6 +486,7 @@ def test_email_processor_exception(value, expected_error_message):
     'value, choices, raw_value_processor, expected_value',
     (
         (None, None, None, None),
+        (' \xa0\n', None, None, None),
         ('2', {'1': 'First', '2': 'Second'}, None, 'Second'),
         (2, {'1': 'First', '2': 'Second'}, None, 'Second'),
         (' 2 ', {'1': 'First', '2': 'Second'}, None, 'Second'),

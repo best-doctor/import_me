@@ -28,11 +28,19 @@ class BaseProcessor:
     raise_error = True
     none_if_error = False
 
-    def __init__(self, raise_error: bool = None, none_if_error: bool = None, **kwargs: Any):
+    def __init__(
+        self, raise_error: bool = None, none_if_error: bool = None,
+        strip_chars: str = None, strip_whitespace: bool = True,
+        **kwargs: Any,
+    ):
         if raise_error is not None:
             self.raise_error = raise_error
         if none_if_error is not None:
             self.none_if_error = none_if_error
+
+        self.strip_chars = WHITESPACES if strip_whitespace else ''
+        if strip_chars:
+            self.strip_chars += strip_chars
 
     def process_value(self, value: Any) -> Any:
         return value
@@ -47,7 +55,7 @@ class BaseProcessor:
         return value
 
     def __call__(self, value: Any) -> Any:
-        if value is None or (isinstance(value, str) and not value):
+        if value is None or (isinstance(value, str) and not value.strip(self.strip_chars)):
             return None
 
         try:
@@ -75,13 +83,6 @@ class MultipleProcessor(BaseProcessor):
 
 
 class StringProcessor(BaseProcessor):
-    def __init__(self, strip_chars: str = None, strip_whitespace: bool = True, **kwargs: Any) -> None:
-        super().__init__(**kwargs)
-
-        self.strip_chars = WHITESPACES if strip_whitespace else ''
-        if strip_chars:
-            self.strip_chars += strip_chars
-
     def process_value(self, value: Any) -> Optional[str]:
         if not isinstance(value, str):
             value = str(value)
