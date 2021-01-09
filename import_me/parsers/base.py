@@ -17,11 +17,27 @@ class ParserMixin:
 
     def __init__(self, *args: Any, **kwargs: Any) -> None:
         self.cleaned_data: List[Dict[str, Any]] = []
-        self.errors: List[str] = []
+        self._errors: DefaultDict[str, List[str]] = collections.defaultdict(list)
 
     @property
     def has_errors(self) -> bool:
         return bool(self.errors)
+
+    @property
+    def errors(self) -> List[str]:
+        return self._errors['ERROR']
+
+    @property
+    def warnings(self) -> List[str]:
+        return self._errors['WARNING']
+
+    @property
+    def info(self) -> List[str]:
+        return self._errors['INFO']
+
+    @property
+    def debug(self) -> List[str]:
+        return self._errors['DEBUG']
 
     def __call__(self, raise_errors: bool = False, *args: Any, **kwargs: Any) -> None:
         raise NotImplementedError
@@ -182,7 +198,9 @@ class BaseParser(ParserMixin):
     def clean(self, data: List) -> List:
         return data
 
-    def add_errors(self, messages: Union[str, List], row_index: int = None, col_index: int = None) -> None:
+    def add_errors(
+        self, messages: Union[str, List], row_index: int = None, col_index: int = None, level: str = 'ERROR',
+    ) -> None:
         if not isinstance(messages, list):
             messages = [messages]
         for message in messages:
@@ -192,7 +210,7 @@ class BaseParser(ParserMixin):
             if col_index is not None:
                 error.append(f'column: {col_index}')
             error.append(message)
-            self.errors.append(', '.join(error))
+            self._errors[level].append(', '.join(error))
 
     def __call__(self, raise_errors: bool = False, *args: Any, **kwargs: Any) -> None:
         try:
@@ -222,7 +240,7 @@ class BaseMultipleFileParser(ParserMixin):
                 paths.append(file_path)
         return sorted(paths)
 
-    def add_errors(self, messages: Union[List, str], file_path: pathlib.Path) -> None:
+    def add_errors(self, messages: Union[List, str], file_path: pathlib.Path, level: str = 'ERROR') -> None:
         if not isinstance(messages, list):
             messages = [messages]
         for message in messages:

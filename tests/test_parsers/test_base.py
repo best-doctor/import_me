@@ -176,6 +176,18 @@ def test_parser_has_errors():
     assert parser.has_errors is True
 
 
+def test_add_warnings():
+    class Parser(BaseParser):
+        pass
+
+    parser = Parser()
+
+    parser.add_errors('Warning text', 0, 0, 'WARNING')
+
+    assert parser.warnings == ['row: 0, column: 0, Warning text']
+    assert parser.has_errors is False
+
+
 def test_parser_custom_column_clean_method(workbook_factory):
     class Parser(BaseParser):
         add_file_path = False
