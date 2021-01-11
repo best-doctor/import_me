@@ -3,10 +3,8 @@ xlrd==1.2.0
 email-validator==1.0.5
 pytest==5.4.1
 pytest-cov==2.8.1
-mypy==0.770
+mypy==0.790
 
-typing==3.6.4
-typing-extensions==3.7.4.2
 pydocstyle==5.0.2
 flake8==3.7.9
 flake8-2020==1.6.0
