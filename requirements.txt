@@ -23,7 +23,8 @@ flake8-print==3.1.4
 flake8-quotes==3.0.0
 flake8-string-format==0.3.0
 flake8-fixme==1.1.1
-flake8-annotations-complexity==0.0.4
+# flake8-annotations-complexity==0.0.4
+git+git://github.com/best-doctor/flake8-annotations-complexity.git@v0.0.6
 flake8-variables-names==0.0.3
 flake8-class-attributes-order==0.1.0
 flake8-broken-line==0.2.0
