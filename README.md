@@ -22,7 +22,7 @@ from import_me import BaseXLSXParser, Column
 >>> parser = XLSXParser(file_path=xlsx_filepath)
 >>> parser()
 >>> print(parser.has_errors)  # False
->>> pprint(parser.cleaned_data)
+>>> print(parser.cleaned_data)
 [
     {
         'first_name': 'Ivan',
