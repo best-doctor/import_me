@@ -56,7 +56,7 @@ class BaseParser(ParserMixin):
     def iterate_file_rows(self) -> Iterator[Tuple[int, List[Any]]]:
         raise NotImplementedError
 
-    def parse(self) -> None:
+    def _parse(self) -> None:
         data = []
 
         for row_index, row in self.iterate_file_rows():
@@ -194,15 +194,19 @@ class BaseParser(ParserMixin):
             error.append(message)
             self.errors.append(', '.join(error))
 
-    def __call__(self, raise_errors: bool = False, *args: Any, **kwargs: Any) -> None:
+    def parse_data(self, raise_errors: bool = False, *args: Any, **kwargs: Any) -> None:
         try:
-            self.parse()
+            self._parse()
         except Exception as e:
             messages = getattr(e, 'messages', str(e))
             self.add_errors(messages)
 
         if raise_errors and self.has_errors:
             raise ParserError(self.errors)
+
+    def __call__(self, raise_errors: bool = False, *args: Any, **kwargs: Any) -> None:
+        # for backward compatibility, deprecated
+        return self.parse_data(raise_errors, *args,  **kwargs)
 
 
 class BaseMultipleFileParser(ParserMixin):
@@ -228,7 +232,7 @@ class BaseMultipleFileParser(ParserMixin):
         for message in messages:
             self.errors.append(f'{file_path}, {message}')
 
-    def __call__(self, raise_errors: bool = False, *args: Any, **kwargs: Any) -> None:
+    def parse_data(self, raise_errors: bool = False, *args: Any, **kwargs: Any) -> None:
         for file_path in self.get_file_paths():
             try:
                 parser = self.parser_class(file_path)
@@ -243,3 +247,7 @@ class BaseMultipleFileParser(ParserMixin):
 
         if raise_errors and self.has_errors:
             raise ParserError(self.errors)
+
+    def __call__(self, raise_errors: bool = False, *args: Any, **kwargs: Any) -> None:
+        # for backward compatibility, deprecated
+        return self.parse_data(raise_errors, *args, **kwargs)
