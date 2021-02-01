@@ -56,19 +56,6 @@ class BaseParser(ParserMixin):
     def iterate_file_rows(self) -> Iterator[Tuple[int, List[Any]]]:
         raise NotImplementedError
 
-    def _parse(self) -> None:
-        data = []
-
-        for row_index, row in self.iterate_file_rows():
-            try:
-                row_data = self.parse_row(row, row_index)
-            except SkipRow:
-                pass
-            else:
-                data.append(row_data)
-
-        self.cleaned_data = self.clean(data)
-
     def parse_row(self, row: List[Any], row_index: int) -> Dict:
         row_data = {}
         row_has_errors = False
@@ -206,7 +193,20 @@ class BaseParser(ParserMixin):
 
     def __call__(self, raise_errors: bool = False, *args: Any, **kwargs: Any) -> None:
         # for backward compatibility, deprecated
-        return self.parse_data(raise_errors, *args,  **kwargs)
+        return self.parse_data(raise_errors, *args, **kwargs)
+
+    def _parse(self) -> None:
+        data = []
+
+        for row_index, row in self.iterate_file_rows():
+            try:
+                row_data = self.parse_row(row, row_index)
+            except SkipRow:
+                pass
+            else:
+                data.append(row_data)
+
+        self.cleaned_data = self.clean(data)
 
 
 class BaseMultipleFileParser(ParserMixin):
