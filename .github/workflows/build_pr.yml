@@ -1,7 +1,7 @@
 name: Lint and test code
 
 on:
-  push:
+  pull_request:
     branches: [ master ]
 
 jobs:
@@ -22,9 +22,5 @@ jobs:
         uses: actionshub/markdownlint@main
       - name: Run checks
         run: make style types requirements
-      - name: Run tests and publish coverage
-        uses: paambaati/codeclimate-action@v2.7.5
-        env:
-          CC_TEST_REPORTER_ID: ${{ secrets.CC_TEST_REPORTER_ID }}
-        with:
-          coverageCommand: make coverage
+      - name: Run tests
+        run: make test
