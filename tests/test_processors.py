@@ -1,5 +1,4 @@
 import datetime
-import decimal
 import string
 from decimal import Decimal
 
@@ -11,7 +10,7 @@ from import_me.processors import (
     strip, lower, BaseProcessor, MultipleProcessor, DateTimeProcessor, DateProcessor,
     StringProcessor, StringIsNoneProcessor, BooleanProcessor, IntegerProcessor,
     DecimalProcessor, FloatProcessor, EmailProcessor, ChoiceProcessor, ClassifierProcessor,
-    StringsArrayProcessor, DecimalRangeProcessor, IntegerRangeProcessor, LimitedStringProcessor
+    StringsArrayProcessor, DecimalRangeProcessor, IntegerRangeProcessor, LimitedStringProcessor,
 )
 from conftest import (
     raise_, choices_classifier_datetime_processor, choices_classifier_integer_processor,
@@ -375,8 +374,8 @@ def test_integer_processor_exception(value, expected_error_message):
     [
         (12, 10, 30, 12),
         (1, 0, 10, 1),
-        (10, 2, 25, 10)
-    ]
+        (10, 2, 25, 10),
+    ],
 )
 def test_integer_range_processor(input_value, min_value, max_value, expected_value):
     processor = IntegerRangeProcessor(min_value=min_value, max_value=max_value)
@@ -441,7 +440,7 @@ def test_decimal_processor_exception(value, expected_error_message):
     [
         (10.1, Decimal('0.0'), Decimal('100.0'), Decimal(10.1)),
         (Decimal('15.66'), Decimal('10.5'), Decimal('25.5'), Decimal('15.66')),
-    ]
+    ],
 )
 def test_decimal_range_processor(input_value, min_value, max_value, expected_value):
     processor = DecimalRangeProcessor(min_value=min_value, max_value=max_value)
@@ -726,7 +725,7 @@ def test_strings_array_processor(input_value, expected_value):
         (datetime.date(2019, 1, 1), '2019-01-01'),
         (None, None),
         ('       ', None),
-    ]
+    ],
 )
 def test_limited_string_processor(input_value, expected_value):
     processor = LimitedStringProcessor(max_length=30)
@@ -739,9 +738,9 @@ def test_limited_string_processor(input_value, expected_value):
     [
         ('test_string', 5, '"test_string" exceeds max length 5'),
         ('Hello, world!', 10, '"Hello, world!" exceeds max length 10'),
-    ]
+    ],
 )
-def test_limited_string_processor(input_value, max_length, expected_error):
+def test_limited_string_processor_exception(input_value, max_length, expected_error):
     processor = LimitedStringProcessor(max_length=max_length)
 
     with pytest.raises(ColumnError) as exc_info:
