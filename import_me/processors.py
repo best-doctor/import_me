@@ -93,6 +93,20 @@ class StringProcessor(BaseProcessor):
             return value
 
 
+class LimitedStringProcessor(StringProcessor):
+    def __init__(self, max_length: int, **kwargs: Any) -> None:
+        super().__init__(**kwargs)
+
+        self.max_length = max_length
+
+    def process_value(self, value: Any) -> Any:
+        str_value = super().process_value(value)
+        if str_value and len(str_value) > self.max_length:
+            raise ColumnError(f'"{value}" exceeds max length {self.max_length}')
+
+        return str_value
+
+
 class IntegerProcessor(BaseProcessor):
     @staticmethod
     def _process_float_value(value: float) -> Optional[int]:
@@ -116,6 +130,21 @@ class IntegerProcessor(BaseProcessor):
             raise ColumnError(f'{value} is not an integer.')
 
         return int_value
+
+
+class IntegerRangeProcessor(IntegerProcessor):
+    def __init__(self, min_value: int, max_value: int, **kwargs: Any) -> None:
+        super().__init__(**kwargs)
+
+        self.min_value = min_value
+        self.max_value = max_value
+
+    def process_value(self, value: Any) -> Any:
+        value = super().process_value(value)
+        if not (self.min_value < value <= self.max_value):
+            raise ColumnError(f'{value} is not in range ({self.min_value}..{self.max_value}].')
+
+        return value
 
 
 class FloatProcessor(BaseProcessor):
@@ -146,6 +175,23 @@ class DecimalProcessor(BaseProcessor):
                 raise ColumnError(f'{value} is not a floating point number.')
 
         return decimal_value
+
+
+class DecimalRangeProcessor(DecimalProcessor):
+    def __init__(
+        self, min_value: Decimal, max_value: Decimal, **kwargs: Any,
+    ) -> None:
+        super().__init__(**kwargs)
+
+        self.min_value = min_value
+        self.max_value = max_value
+
+    def process_value(self, value: Any) -> Any:
+        value = super().process_value(value)
+        if not (self.min_value < value <= self.max_value):
+            raise ColumnError(f'{value} is not in range ({self.min_value}..{self.max_value}].')
+
+        return value
 
 
 class BooleanProcessor(BaseProcessor):
@@ -238,6 +284,26 @@ class StringIsNoneProcessor(BaseProcessor):
             if symbols.issubset(self.none_symbols):
                 return None
         return value
+
+
+class StringsArrayProcessor(BaseProcessor):
+    def process_value(self, value: Any) -> Optional[List[str]]:
+        values = super().process_value(value)
+        if values is None:
+            return None
+
+        result_values = []
+        for value in values.split(','):
+            result_values.append(value.strip(self.strip_chars))
+
+        return result_values
+
+    def __call__(self, value: Any) -> List[str]:
+        result = super().__call__(value)
+        if result is None:
+            result = []
+
+        return result
 
 
 class ChoiceProcessor(BaseProcessor):

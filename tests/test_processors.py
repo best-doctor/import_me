@@ -5,10 +5,12 @@ from decimal import Decimal
 import pytest
 
 from import_me.exceptions import StopParsing, ColumnError
+from import_me.constants import WHITESPACES
 from import_me.processors import (
     strip, lower, BaseProcessor, MultipleProcessor, DateTimeProcessor, DateProcessor,
     StringProcessor, StringIsNoneProcessor, BooleanProcessor, IntegerProcessor,
     DecimalProcessor, FloatProcessor, EmailProcessor, ChoiceProcessor, ClassifierProcessor,
+    StringsArrayProcessor, DecimalRangeProcessor, IntegerRangeProcessor, LimitedStringProcessor,
 )
 from conftest import (
     raise_, choices_classifier_datetime_processor, choices_classifier_integer_processor,
@@ -368,6 +370,35 @@ def test_integer_processor_exception(value, expected_error_message):
 
 
 @pytest.mark.parametrize(
+    ('input_value', 'min_value', 'max_value', 'expected_value'),
+    [
+        (12, 10, 30, 12),
+        (1, 0, 10, 1),
+        (10, 2, 25, 10),
+    ],
+)
+def test_integer_range_processor(input_value, min_value, max_value, expected_value):
+    processor = IntegerRangeProcessor(min_value=min_value, max_value=max_value)
+
+    assert processor(input_value) == expected_value
+
+
+@pytest.mark.parametrize(
+    ('value', 'min_value', 'max_value', 'expected_error_message'),
+    [
+        (10, 0, 5, '10 is not in range (0..5].'),
+        (128, 10, 100, '128 is not in range (10..100].'),
+    ],
+)
+def test_integer_range_processor_exception(value, min_value, max_value, expected_error_message):
+    processor = IntegerRangeProcessor(min_value, max_value)
+
+    with pytest.raises(ColumnError) as exc_info:
+        processor(value)
+    assert exc_info.value.messages == [expected_error_message]
+
+
+@pytest.mark.parametrize(
     'value, expected_value',
     (
         (None, None),
@@ -398,6 +429,34 @@ def test_decimal_processor(value, expected_value):
 )
 def test_decimal_processor_exception(value, expected_error_message):
     processor = DecimalProcessor()
+
+    with pytest.raises(ColumnError) as exc_info:
+        processor(value)
+    assert exc_info.value.messages == [expected_error_message]
+
+
+@pytest.mark.parametrize(
+    ('input_value', 'min_value', 'max_value', 'expected_value'),
+    [
+        (10.1, Decimal('0.0'), Decimal('100.0'), Decimal(10.1)),
+        (Decimal('15.66'), Decimal('10.5'), Decimal('25.5'), Decimal('15.66')),
+    ],
+)
+def test_decimal_range_processor(input_value, min_value, max_value, expected_value):
+    processor = DecimalRangeProcessor(min_value=min_value, max_value=max_value)
+
+    assert processor(input_value) == expected_value
+
+
+@pytest.mark.parametrize(
+    ('value', 'min_value', 'max_value', 'expected_error_message'),
+    [
+        (Decimal('27.8'), Decimal('0.0'), Decimal('25.0'), '27.8 is not in range (0.0..25.0].'),
+        (Decimal('28.66'), Decimal('10.5'), Decimal('25.5'), '28.66 is not in range (10.5..25.5].'),
+    ],
+)
+def test_decimal_range_processor_exception(value, min_value, max_value, expected_error_message):
+    processor = DecimalRangeProcessor(min_value, max_value)
 
     with pytest.raises(ColumnError) as exc_info:
         processor(value)
@@ -634,3 +693,56 @@ def test_classifier_datetime_processor_exception(value, choices, raw_value_proce
     with pytest.raises(ColumnError) as exc_info:
         processor(value)
     assert exc_info.value.messages == [expected_error_message]
+
+
+@pytest.mark.parametrize(
+    ('input_value', 'expected_value'),
+    [
+        (None, []),
+        ('', []),
+        (' \xa0\t', []),
+        ('123', ['123']),
+        ('123,456', ['123', '456']),
+        ('123, \xa0\t456', ['123', '456']),
+    ],
+)
+def test_strings_array_processor(input_value, expected_value):
+    processor = StringsArrayProcessor(strip_chars=WHITESPACES)
+
+    result_value = processor(input_value)
+
+    assert result_value == expected_value
+
+
+@pytest.mark.parametrize(
+    ('input_value', 'expected_value'),
+    [
+        (None, None),
+        (' Test string  ', 'Test string'),
+        (123, '123'),
+        (123.1, '123.1'),
+        (datetime.datetime(2019, 1, 1, 1, 1, 1), '2019-01-01 01:01:01'),
+        (datetime.date(2019, 1, 1), '2019-01-01'),
+        (None, None),
+        ('       ', None),
+    ],
+)
+def test_limited_string_processor(input_value, expected_value):
+    processor = LimitedStringProcessor(max_length=30)
+
+    assert processor(input_value) == expected_value
+
+
+@pytest.mark.parametrize(
+    ('input_value', 'max_length', 'expected_error'),
+    [
+        ('test_string', 5, '"test_string" exceeds max length 5'),
+        ('Hello, world!', 10, '"Hello, world!" exceeds max length 10'),
+    ],
+)
+def test_limited_string_processor_exception(input_value, max_length, expected_error):
+    processor = LimitedStringProcessor(max_length=max_length)
+
+    with pytest.raises(ColumnError) as exc_info:
+        processor(input_value)
+    assert exc_info.value.messages == [expected_error]
