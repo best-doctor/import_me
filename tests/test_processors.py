@@ -12,7 +12,7 @@ from import_me.processors import (
     DecimalProcessor, FloatProcessor, EmailProcessor, ChoiceProcessor, ClassifierProcessor,
     StringsArrayProcessor, DecimalRangeProcessor, IntegerRangeProcessor, LimitedStringProcessor,
 )
-from conftest import (
+from tests.conftest import (
     raise_, choices_classifier_datetime_processor, choices_classifier_integer_processor,
     choices_classifier_no_processor, datetime_for_test_with_user_timezone,
 )

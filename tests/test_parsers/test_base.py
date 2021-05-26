@@ -3,7 +3,7 @@ import pytest
 from import_me.columns import Column
 from import_me.exceptions import SkipRow, StopParsing, ColumnError
 from import_me.parsers.base import BaseParser
-from conftest import raise_
+from tests.conftest import raise_
 
 
 def test_clean_row_skip_row(base_parser):
