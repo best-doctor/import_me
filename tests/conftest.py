@@ -94,29 +94,35 @@ def xlsx_row_factory(xlsx_cell_factory):
 
 @pytest.fixture
 def workbook_factory():
-    def _workbook_factory(header=None, data=None, header_row_index=0, data_row_index=1):
+    def _workbook_factory(
+        header=None, data=None, header_row_index=0, data_row_index=1, worksheets_count=1,
+    ):
         wb = Workbook()
-        ws = wb.active
+        wb.remove(wb.active)  # remove default worksheet for clear creation
 
-        if header is not None:
-            for _row_index in range(header_row_index):
-                ws.append([''] * len(header))
-            ws.append(header)
+        for worksheet_index in range(worksheets_count):
+            ws = wb.create_sheet(title=str(worksheet_index), index=worksheet_index)
+            if header is not None:
+                for _row_index in range(header_row_index):
+                    ws.append([''] * len(header))
+                ws.append(header)
 
-        if data is not None:
-            for _row_index in range(header_row_index, data_row_index - 1):
-                ws.append([''] * len(data))
-            for row in data:
-                ws.append(row)
+            if data is not None:
+                for _row_index in range(header_row_index, data_row_index - 1):
+                    ws.append([''] * len(data))
+                for row in data:
+                    ws.append(row)
         return wb
     return _workbook_factory
 
 
 @pytest.fixture
 def xlsx_file_factory(workbook_factory):
-    def _xlsx_file_factory(header=None, data=None, header_row_index=0, data_row_index=1):
+    def _xlsx_file_factory(
+        header=None, data=None, header_row_index=0, data_row_index=1, worksheets_count=1,
+    ):
         xlsx_file = tempfile.NamedTemporaryFile(suffix='.xlsx')
-        wb = workbook_factory(header, data, header_row_index, data_row_index)
+        wb = workbook_factory(header, data, header_row_index, data_row_index, worksheets_count)
         wb.save(xlsx_file.name)
         return xlsx_file
     return _xlsx_file_factory
