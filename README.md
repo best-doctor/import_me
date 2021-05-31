@@ -16,7 +16,7 @@ from import_me.processors import StringProcessor, IntegerProcessor
 
 >>> class XLSXParser(BaseXLSXParser):
 ...     columns = [
-...         Column('first_name', index=0, header='First Name' processor=StringProcessor()),
+...         Column('first_name', index=0, header='First Name', processor=StringProcessor()),
 ...         Column('last_name', index=1, header='Last Name', processor=StringProcessor()),
 ...         Column('age', index=2, header='Age', processor=IntegerProcessor()),
 ...     ]
