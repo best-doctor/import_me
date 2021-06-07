@@ -6,6 +6,7 @@ import pytest
 from openpyxl import Workbook
 from openpyxl.cell import Cell
 from openpyxl.worksheet.worksheet import Worksheet
+from pytz import timezone
 
 from import_me.columns import Column
 from import_me.parsers.base import BaseParser
@@ -31,6 +32,11 @@ choices_classifier_datetime_processor = [
     ['a', lambda x: datetime.date(2020, 1, 1) <= x <= datetime.date(2020, 12, 31)],
     ['b', lambda x: datetime.date(2021, 1, 1) <= x <= datetime.date(2021, 12, 31)],
 ]
+
+
+datetime_for_test = datetime.datetime(2019, 7, 20, 12, 43, 52)
+user_timezone = timezone('Europe/Moscow')
+datetime_for_test_with_user_timezone = datetime_for_test.astimezone(user_timezone)
 
 
 @pytest.fixture

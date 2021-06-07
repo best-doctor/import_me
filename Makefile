@@ -1,4 +1,7 @@
 test:
+	python -m pytest
+
+coverage:
 	python -m pytest --cov=import_me --cov-report=xml
 
 types:
@@ -6,6 +9,8 @@ types:
 
 style:
 	flake8 .
+
+readme:
 	mdl README.md
 
 requirements:

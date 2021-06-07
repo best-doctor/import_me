@@ -12,11 +12,13 @@ Python tool for importing and validating data from xlsx/xls/csv files.
 
 ```jupyter
 from import_me import BaseXLSXParser, Column
+from import_me.processors import StringProcessor, IntegerProcessor
 
 >>> class XLSXParser(BaseXLSXParser):
 ...     columns = [
-...         Column('first_name', index=0, header='First Name'),
-...         Column('last_name', index=1, header='Last Name'),
+...         Column('first_name', index=0, header='First Name', processor=StringProcessor()),
+...         Column('last_name', index=1, header='Last Name', processor=StringProcessor()),
+...         Column('age', index=2, header='Age', processor=IntegerProcessor()),
 ...     ]
 
 >>> parser = XLSXParser(file_path=xlsx_filepath)
@@ -27,11 +29,13 @@ from import_me import BaseXLSXParser, Column
     {
         'first_name': 'Ivan',
         'last_name': 'Ivanov',
+        'age': 25,
         'row_index': 1,
     },
     {
         'first_name': 'Petr',
         'last_name': 'Petrov',
+        'age': 33,
         'row_index': 2,
     },
 ]

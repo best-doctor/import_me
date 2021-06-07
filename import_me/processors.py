@@ -1,7 +1,9 @@
 import datetime
 import string
+import pytz.exceptions
 from decimal import Decimal, InvalidOperation
-from typing import Callable, Collection, Any, Optional, Sequence, Dict, List
+from pytz import timezone as check_timezone
+from typing import Callable, Collection, Any, Optional, Sequence, Dict, List, Union
 
 from dateutil.parser import parse
 from email_validator import validate_email, EmailNotValidError
@@ -26,11 +28,19 @@ class BaseProcessor:
     raise_error = True
     none_if_error = False
 
-    def __init__(self, raise_error: bool = None, none_if_error: bool = None, **kwargs: Any):
+    def __init__(
+        self, raise_error: bool = None, none_if_error: bool = None,
+        strip_chars: str = None, strip_whitespace: bool = True,
+        **kwargs: Any,
+    ):
         if raise_error is not None:
             self.raise_error = raise_error
         if none_if_error is not None:
             self.none_if_error = none_if_error
+
+        self.strip_chars = WHITESPACES if strip_whitespace else ''
+        if strip_chars:
+            self.strip_chars += strip_chars
 
     def process_value(self, value: Any) -> Any:
         return value
@@ -45,7 +55,7 @@ class BaseProcessor:
         return value
 
     def __call__(self, value: Any) -> Any:
-        if value is None or (isinstance(value, str) and not value):
+        if value is None or (isinstance(value, str) and not value.strip(self.strip_chars)):
             return None
 
         try:
@@ -98,6 +108,20 @@ class StringProcessor(BaseProcessor):
             return value
 
 
+class LimitedStringProcessor(StringProcessor):
+    def __init__(self, max_length: int, **kwargs: Any) -> None:
+        super().__init__(**kwargs)
+
+        self.max_length = max_length
+
+    def process_value(self, value: Any) -> Any:
+        str_value = super().process_value(value)
+        if str_value and len(str_value) > self.max_length:
+            raise ColumnError(f'"{value}" exceeds max length {self.max_length}')
+
+        return str_value
+
+
 class IntegerProcessor(BaseProcessor):
     @staticmethod
     def _process_float_value(value: float) -> Optional[int]:
@@ -121,6 +145,21 @@ class IntegerProcessor(BaseProcessor):
             raise ColumnError(f'{value} is not an integer.')
 
         return int_value
+
+
+class IntegerRangeProcessor(IntegerProcessor):
+    def __init__(self, min_value: int, max_value: int, **kwargs: Any) -> None:
+        super().__init__(**kwargs)
+
+        self.min_value = min_value
+        self.max_value = max_value
+
+    def process_value(self, value: Any) -> Any:
+        value = super().process_value(value)
+        if not (self.min_value < value <= self.max_value):
+            raise ColumnError(f'{value} is not in range ({self.min_value}..{self.max_value}].')
+
+        return value
 
 
 class FloatProcessor(BaseProcessor):
@@ -153,6 +192,23 @@ class DecimalProcessor(BaseProcessor):
         return decimal_value
 
 
+class DecimalRangeProcessor(DecimalProcessor):
+    def __init__(
+        self, min_value: Decimal, max_value: Decimal, **kwargs: Any,
+    ) -> None:
+        super().__init__(**kwargs)
+
+        self.min_value = min_value
+        self.max_value = max_value
+
+    def process_value(self, value: Any) -> Any:
+        value = super().process_value(value)
+        if not (self.min_value < value <= self.max_value):
+            raise ColumnError(f'{value} is not in range ({self.min_value}..{self.max_value}].')
+
+        return value
+
+
 class BooleanProcessor(BaseProcessor):
     def __init__(self, true_values: Sequence = None, false_values: Sequence = None, **kwargs: Any) -> None:
         super().__init__(**kwargs)
@@ -174,10 +230,18 @@ class BooleanProcessor(BaseProcessor):
 
 
 class DateTimeProcessor(BaseProcessor):
-    def __init__(self, formats: Collection[str] = None, parser: Callable = None, **kwargs: Any) -> None:
+    def __init__(self, formats: Collection[str] = None,
+                 parser: Callable = None, timezone: Union[str, None] = None, **kwargs: Any) -> None:
         super().__init__(**kwargs)
         self.formats = formats
         self.parser = parser or parse
+        self.user_timezone = None
+        if timezone:
+            try:
+                self.user_timezone = check_timezone(timezone)
+            except pytz.exceptions.UnknownTimeZoneError:
+                self.user_timezone = None
+                raise ValueError(f'Unknown time zone.')
 
     def process_value(self, value: Any) -> Any:
         if isinstance(value, str):
@@ -188,6 +252,8 @@ class DateTimeProcessor(BaseProcessor):
             value = datetime.datetime.combine(value, datetime.time.min)
         else:
             raise ColumnError(f'Unable to convert to date {value}.')
+        if self.user_timezone:
+            value = value.astimezone(self.user_timezone)
         return value
 
     def _get_datetime_from_string(self, value: str) -> datetime.datetime:
@@ -233,6 +299,26 @@ class StringIsNoneProcessor(BaseProcessor):
             if symbols.issubset(self.none_symbols):
                 return None
         return value
+
+
+class StringsArrayProcessor(BaseProcessor):
+    def process_value(self, value: Any) -> Optional[List[str]]:
+        values = super().process_value(value)
+        if values is None:
+            return None
+
+        result_values = []
+        for value in values.split(','):
+            result_values.append(value.strip(self.strip_chars))
+
+        return result_values
+
+    def __call__(self, value: Any) -> List[str]:
+        result = super().__call__(value)
+        if result is None:
+            result = []
+
+        return result
 
 
 class ChoiceProcessor(BaseProcessor):
