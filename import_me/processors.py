@@ -73,14 +73,22 @@ class MultipleProcessor(BaseProcessor):
 
 
 class StringProcessor(BaseProcessor):
-    def __init__(self, strip_chars: str = None, strip_whitespace: bool = True, **kwargs: Any) -> None:
+    def __init__(
+        self, strip_chars: str = None,
+        strip_whitespace: bool = True,
+        float_fix: bool = False,
+        **kwargs: Any,
+    ) -> None:
         super().__init__(**kwargs)
 
         self.strip_chars = WHITESPACES if strip_whitespace else ''
         if strip_chars:
             self.strip_chars += strip_chars
+        self.float_fix = float_fix
 
     def process_value(self, value: Any) -> Optional[str]:
+        if self.float_fix and isinstance(value, float):
+            value = str(value).replace('.0', '')
         if not isinstance(value, str):
             value = str(value)
 
