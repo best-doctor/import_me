@@ -237,6 +237,7 @@ def test_date_processor_error_date_value():
         (123, '123'),
         ('123.0', '123.0'),
         (123.1, '123.1'),
+        (123.01, '123.01'),
         (datetime.datetime(2019, 1, 1, 1, 1, 1), '2019-01-01 01:01:01'),
         (datetime.date(2019, 1, 1), '2019-01-01'),
         (None, None),

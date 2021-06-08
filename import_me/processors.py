@@ -97,8 +97,8 @@ class StringProcessor(BaseProcessor):
         self.float_fix = float_fix
 
     def process_value(self, value: Any) -> Optional[str]:
-        if self.float_fix and isinstance(value, float):
-            value = str(value).replace('.0', '')
+        if self.float_fix and isinstance(value, float) and str(value).endswith('.0'):
+            value = str(value)[:-2]
         if not isinstance(value, str):
             value = str(value)
 
