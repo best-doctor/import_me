@@ -3,3 +3,6 @@ checks:
   file-lines:
     config:
       threshold: 500
+  complex-logic:
+    config:
+      threshold: 8
