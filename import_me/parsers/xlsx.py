@@ -90,7 +90,15 @@ class BaseXLSXParser(BaseParser):
         return load_workbook(filename=self.file_path or self.file_contents, read_only=True, data_only=True)
 
     def _load_workbook_from_xls(self) -> Workbook:
-        xls_workbook = xlrd.open_workbook(filename=self.file_path, file_contents=self.file_contents)
+        file_contents = self.file_contents
+        try:
+            file_contents = self.file_contents.read()
+        except AttributeError:
+            # This is likely the case when someone passed an
+            # actual file content instead of just opened file
+            pass
+
+        xls_workbook = xlrd.open_workbook(filename=self.file_path, file_contents=file_contents)
         xls_sheet = xls_workbook.sheet_by_index(0)
         nrows = xls_sheet.nrows
         ncols = xls_sheet.ncols
