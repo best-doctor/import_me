@@ -1,6 +1,8 @@
+import sys
 from unittest.mock import MagicMock
 
 import pytest
+from openpyxl.utils.exceptions import InvalidFileException
 from openpyxl.workbook import Workbook
 
 from import_me.columns import Column
@@ -25,6 +27,59 @@ def test_base_xlsx_parser(xlsx_file_factory):
 
     xlsx_file = xlsx_file_factory(**DEFAULT_WORKBOOK_DATA)
     parser = XLSXParser(file_path=xlsx_file.name)
+
+    parser()
+
+    assert parser.has_errors is False
+    assert parser.cleaned_data == [
+        {
+            'first_name': 'Ivan',
+            'last_name': 'Ivanov',
+            'row_index': 1,
+        },
+        {
+            'first_name': 'Petr',
+            'last_name': 'Petrov',
+            'row_index': 2,
+        },
+    ]
+
+
+def test_base_xlsx_parser_accepts_file_object(xlsx_file_factory):
+    class XLSXParser(BaseXLSXParser):
+        columns = DEFAULT_PARSER_COLUMNS
+
+    xlsx_file = xlsx_file_factory(**DEFAULT_WORKBOOK_DATA)
+    parser = XLSXParser(file_contents=xlsx_file)
+
+    parser()
+
+    assert parser.has_errors is False
+    assert parser.cleaned_data == [
+        {
+            'first_name': 'Ivan',
+            'last_name': 'Ivanov',
+            'row_index': 1,
+        },
+        {
+            'first_name': 'Petr',
+            'last_name': 'Petrov',
+            'row_index': 2,
+        },
+    ]
+
+
+@pytest.mark.xfail(
+    sys.version_info >= (3, 9),
+    reason="Xlrd doesn't work with xlsx on python 3.9",
+)
+def test_base_xlsx_parser_accepts_file_content(xlsx_file_factory):
+    class XLSXParser(BaseXLSXParser):
+        columns = DEFAULT_PARSER_COLUMNS
+
+    xlsx_file = xlsx_file_factory(**DEFAULT_WORKBOOK_DATA)
+    parser = XLSXParser(file_contents=xlsx_file.read())
+    parser._load_workbook_from_xlsx = MagicMock(side_effect=InvalidFileException)
 
     parser()
 
