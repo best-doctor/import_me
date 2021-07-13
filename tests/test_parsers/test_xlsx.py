@@ -210,6 +210,33 @@ def test_parser_unique_column(xlsx_file_factory):
     ]
 
 
+def test_parser_unique_column_without_header(xlsx_file_factory):
+    class Parser(BaseXLSXParser):
+        first_data_row_index = 0
+        columns = [
+            Column('id', index=0, unique=True),
+        ]
+
+    xlsx_file = xlsx_file_factory(
+        data_row_index=0,
+        data=[
+            ['1'],
+            ['2'],
+            ['1'],
+        ],
+    )
+    parser = Parser(file_path=xlsx_file.file)
+
+    parser()
+
+    assert parser.has_errors is True
+    assert parser.errors == ['row: 2, column: 0, value 1 is a duplicate of row 0']
+    assert parser.cleaned_data == [
+        {'id': '1', 'row_index': 0},
+        {'id': '2', 'row_index': 1},
+    ]
+
+
 def test_parser_unique_together_column(xlsx_file_factory):
     class Parser(BaseXLSXParser):
         columns = [

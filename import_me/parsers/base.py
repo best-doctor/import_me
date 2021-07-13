@@ -185,7 +185,7 @@ class BaseParser(ParserMixin):
     def clean_unique_value(self, column: Column, value: Any, row_index: int) -> Any:
         if value is not None and column.unique:
             duplicate_row = self._unique_column_values[column.name].get(value, None)
-            if duplicate_row:
+            if duplicate_row is not None:
                 raise ColumnError(f'value {value} is a duplicate of row {duplicate_row}')
             else:
                 self._unique_column_values[column.name][value] = row_index
