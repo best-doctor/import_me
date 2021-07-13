@@ -223,7 +223,7 @@ def test_parser_unique_column_without_header(xlsx_file_factory):
             ['1'],
             ['2'],
             ['1'],
-        ]
+        ],
     )
     parser = Parser(file_path=xlsx_file.file)
 
