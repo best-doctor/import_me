@@ -3,4 +3,4 @@ from import_me.columns import Column
 from import_me.exceptions import StopParsing
 
 
-__version__ = '0.2.4'
+__version__ = '0.2.5'
