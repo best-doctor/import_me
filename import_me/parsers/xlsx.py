@@ -92,7 +92,7 @@ class BaseXLSXParser(BaseParser):
     def _load_workbook_from_xls(self) -> Workbook:
         file_contents = self.file_contents
         try:
-            file_contents = self.file_contents.read()
+            file_contents = self.file_contents.read()  # type: ignore
         except AttributeError:
             # This is likely the case when someone passed an
             # actual file content instead of just opened file
