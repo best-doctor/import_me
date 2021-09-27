@@ -313,13 +313,6 @@ class StringsArrayProcessor(BaseProcessor):
 
         return result_values
 
-    def __call__(self, value: Any) -> List[str]:
-        result = super().__call__(value)
-        if result is None:
-            result = []
-
-        return result
-
 
 class ChoiceProcessor(BaseProcessor):
     def __init__(self, choices: Dict[Any, Any], raw_value_processor: BaseProcessor = None, **kwargs: Any) -> None:
