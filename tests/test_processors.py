@@ -713,9 +713,9 @@ def test_classifier_datetime_processor_exception(value, choices, raw_value_proce
 @pytest.mark.parametrize(
     ('input_value', 'expected_value'),
     [
-        (None, []),
-        ('', []),
-        (' \xa0\t', []),
+        (None, None),
+        ('', None),
+        (' \xa0\t', None),
         ('123', ['123']),
         ('123,456', ['123', '456']),
         ('123, \xa0\t456', ['123', '456']),
