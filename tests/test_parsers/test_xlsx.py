@@ -8,7 +8,7 @@ from openpyxl.workbook import Workbook
 from import_me.columns import Column
 from import_me.exceptions import StopParsing
 from import_me.parsers.xlsx import BaseXLSXParser, BaseMultipleSheetsXLSXParser
-from import_me.processors import FloatProcessor
+from import_me.processors import FloatProcessor, StringsArrayProcessor
 
 DEFAULT_WORKBOOK_DATA = {
     'header': ['First Name', 'Last Name'],
@@ -237,6 +237,46 @@ def test_parser_skip_empty_row(parser_skip_empty_rows, file_data, expected_data,
 
     assert parser.has_errors is False
     assert parser.cleaned_data == expected_data
+
+
+@pytest.mark.parametrize(
+    'parser_skip_empty_rows, file_data, has_errors',
+    (
+        (
+            True,
+            [[None], ['column1_data'], ['column2_first_value, column2_second_value'], [None]],
+            False,
+        ),
+        (
+            False,
+            [[None], ['column1_data'], ['column2_first_value, column2_second_value'], [None]],
+            True,
+        ),
+        (
+            False,
+            [[None], [None], ['column2_first_value, column2_second_value'], [None]],
+            True,
+        ),
+    ),
+)
+def test_parser_skip_required_empty_rows(
+    parser_skip_empty_rows, file_data, has_errors, xlsx_file_factory,
+):
+    class Parser(BaseXLSXParser):
+        skip_empty_rows = parser_skip_empty_rows
+        add_file_path = False
+        add_row_index = False
+        columns = [
+            Column('column1', index=0),
+            Column('column2', index=0, required=True, processor=StringsArrayProcessor()),
+        ]
+
+    xlsx_file = xlsx_file_factory(header=['column1'], data=file_data)
+    parser = Parser(file_path=xlsx_file.file)
+
+    parser(raise_errors=False)
+
+    assert parser.has_errors is has_errors
 
 
 def test_parser_unique_column(xlsx_file_factory):
