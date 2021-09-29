@@ -260,7 +260,7 @@ def test_parser_skip_empty_row(parser_skip_empty_rows, file_data, expected_data,
     ),
 )
 def test_parser_skip_required_empty_rows(
-    parser_skip_empty_rows, file_data, has_errors, xlsx_file_factory
+    parser_skip_empty_rows, file_data, has_errors, xlsx_file_factory,
 ):
     class Parser(BaseXLSXParser):
         skip_empty_rows = parser_skip_empty_rows
