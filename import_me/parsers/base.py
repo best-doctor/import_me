@@ -1,6 +1,7 @@
 from __future__ import annotations
 
 import collections
+import itertools
 import pathlib
 from typing import TYPE_CHECKING
 
@@ -8,7 +9,7 @@ from import_me.columns import Column
 from import_me.exceptions import ColumnError, ParserError, SkipRow, StopParsing
 
 if TYPE_CHECKING:
-    from typing import List, Dict, Tuple, Any, Type, Union, IO, Iterator, DefaultDict
+    from typing import List, Dict, Tuple, Any, Type, Union, IO, Iterator, DefaultDict, Optional
 
 
 class ParserMixin:
@@ -53,6 +54,49 @@ class BaseParser(ParserMixin):
                 value = ()
             self.__dict__['_unique_together'] = value
         return self.__dict__['_unique_together']
+
+    @staticmethod
+    def _column_header_compare(
+        column: int,
+        expected_value: Optional[str],
+        given_value: Optional[str],
+    ) -> Optional[str]:
+        if expected_value == given_value:
+            return None
+
+        if expected_value is None:
+            return f'column {column} «{given_value}» unnecessary'
+        elif given_value is None:
+            return f'need column {column} «{expected_value}»'
+
+        return f'column {column} «{given_value}» not equal expected «{expected_value}»'
+
+    @staticmethod
+    def _sorted_dict(_dict: Dict) -> List:
+        return sorted(_dict.items(), key=lambda x: x[0])
+
+    @staticmethod
+    def _dict_value(value: Optional[Tuple[int, str]]) -> Optional[str]:
+        return value[1] if value else None
+
+    def check_column_headers(
+        self,
+        expected_headers: Dict[int, str],
+        given_headers: Dict[int, str],
+    ) -> List[str]:
+        err_messages: List[str] = []
+        for expected, given in itertools.zip_longest(
+            self._sorted_dict(expected_headers),
+            self._sorted_dict(given_headers),
+        ):
+            err_message = self._column_header_compare(
+                (expected or given)[0] + 1,
+                self._dict_value(expected),
+                self._dict_value(given),
+            )
+            if err_message:
+                err_messages.append(err_message)
+        return err_messages
 
     def iterate_file_rows(self) -> Iterator[Tuple[int, List[Any]]]:
         raise NotImplementedError

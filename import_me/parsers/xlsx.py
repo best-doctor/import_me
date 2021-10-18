@@ -78,12 +78,13 @@ class BaseXLSXParser(BaseParser):
                     for idx, col in enumerate(row) if idx in expected_headers
                 }
 
-                if columns != expected_headers:
+                err_messages = self.check_column_headers(expected_headers, columns)
+
+                if err_messages:
                     file_path = self.file_path or 'file'
-                    raise StopParsing((
-                        f'Incorrect column names in the file: {file_path}. '
-                        f'Columns in file: {columns}. '
-                        f'Expected columns: {expected_headers}.'))
+                    raise StopParsing(
+                        [f'Incorrect column names in the file: {file_path}.'] + err_messages,
+                    )
                 break
 
     def _load_workbook_from_xlsx(self) -> Workbook:
@@ -168,10 +169,10 @@ class BaseMultipleSheetsXLSXParser(BaseParser):
 
     def _validate_worksheet(self, worksheet: Worksheet) -> bool:
         errors = []
-        headers_error = self._validate_worksheet_headers(worksheet)
+        headers_errors = self._validate_worksheet_headers(worksheet)
         title_error = self._validate_worksheet_title(worksheet.title)
-        if headers_error:
-            errors.append(headers_error)
+        if headers_errors:
+            errors.extend(headers_errors)
         if title_error:
             errors.append(title_error)
         if errors:
@@ -179,7 +180,7 @@ class BaseMultipleSheetsXLSXParser(BaseParser):
             return False
         return True
 
-    def _validate_worksheet_headers(self, worksheet: Worksheet) -> Optional[str]:
+    def _validate_worksheet_headers(self, worksheet: Worksheet) -> list[str] | None:
         expected_headers = {
             column.index: column.header.lower()
             for column in self.columns
@@ -193,14 +194,14 @@ class BaseMultipleSheetsXLSXParser(BaseParser):
                     for idx, col in enumerate(row) if idx in expected_headers
                 }
 
-                if columns != expected_headers:
+                err_messages = self.check_column_headers(expected_headers, columns)
+
+                if err_messages:
                     file_path = self.file_path or 'file'
-                    return (
-                        f'Incorrect column names in the file: {file_path}. '
-                        f'Worksheet title: {worksheet.title}. '
-                        f'Columns in file: {columns}. '
-                        f'Expected columns: {expected_headers}.'
-                    )
+                    return [
+                        f'Incorrect column names in the file: {file_path}.',
+                        f'Worksheet title: {worksheet.title}.',
+                    ] + err_messages
                 break
 
     def _validate_worksheet_title(self, title: str) -> Optional[str]:
