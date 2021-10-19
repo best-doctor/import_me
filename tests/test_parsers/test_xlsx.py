@@ -412,8 +412,8 @@ def test_base_multiple_sheets_xlsx_parser_validate_worksheet_headers_errors(
     ('headers_error', 'title_error', 'errors_len'),
     (
         (None, None, 0),
-        ('error', 'error', 2),
-        ('error', None, 1),
+        (['error'], 'error', 2),
+        (['error'], None, 1),
         (None, 'error', 1),
     ),
     ids=['no-errors', 'all-errors', 'header-error', 'title-error'],

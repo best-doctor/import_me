@@ -86,10 +86,11 @@ class BaseCSVParser(BaseParser):
                         for idx, col in enumerate(row) if idx in expected_headers
                     }
 
-                    if columns != expected_headers:
+                    err_messages = self.check_column_headers(expected_headers, columns)
+
+                    if err_messages:
                         file_path = self.file_path or 'file'
-                        raise StopParsing((
-                            f'Incorrect column names in the file: {file_path}. '
-                            f'Columns in file: {columns}. '
-                            f'Expected columns: {expected_headers}.'))
+                        raise StopParsing(
+                            [f'Incorrect column names in the file: {file_path}.'] + err_messages,
+                        )
                     break
