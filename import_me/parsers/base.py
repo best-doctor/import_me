@@ -101,7 +101,6 @@ class BaseParser(ParserMixin):
     def iterate_file_rows(self) -> Iterator[Tuple[int, List[Any]]]:
         raise NotImplementedError
 
-
     def parse(self) -> None:
         data = []
 
