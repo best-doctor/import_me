@@ -3,7 +3,7 @@ import pytest
 from import_me.columns import Column
 from import_me.exceptions import SkipRow, StopParsing, ColumnError
 from import_me.parsers.base import BaseParser
-from conftest import raise_
+from tests.conftest import raise_
 
 
 def test_clean_row_skip_row(base_parser):
@@ -192,3 +192,21 @@ def test_parser_custom_column_clean_method(workbook_factory):
     result = parser.parse_row(row=['column1_data'], row_index=1)
 
     assert result == {'column1': 'any value'}
+
+
+@pytest.mark.parametrize(('expected', 'given', 'result'), [
+    ([], [], []),
+    (['foo'], ['foo'], []),
+    (['foo'], ['foo', 'foo'], ['column 2 «foo» unnecessary']),
+    (['foo', 'foo'], ['foo'], ['need column 2 «foo»']),
+    (
+        ['foo', 'buz', 'foo'],
+        ['foo', 'foo', 'foo'],
+        ['column 2 «foo» not equal expected «buz»'],
+    ),
+])
+def test_check_column_headers(expected, given, result):
+    assert BaseParser().check_column_headers(
+        {key: value for key, value in enumerate(expected)},
+        {key: value for key, value in enumerate(given)},
+    ) == result

@@ -1,13 +1,15 @@
 from __future__ import annotations
 
 import collections
+import itertools
 import pathlib
+from typing import TYPE_CHECKING
 
 from import_me.columns import Column
 from import_me.exceptions import ColumnError, ParserError, SkipRow, StopParsing
 
-if False:  # TYPE_CHECKING
-    from typing import List, Dict, Tuple, Any, Type, Union, IO, Iterator, DefaultDict
+if TYPE_CHECKING:
+    from typing import List, Dict, Tuple, Any, Type, Union, IO, Iterator, DefaultDict, Optional
 
 
 class ParserMixin:
@@ -53,11 +55,70 @@ class BaseParser(ParserMixin):
             self.__dict__['_unique_together'] = value
         return self.__dict__['_unique_together']
 
+    @staticmethod
+    def _column_header_compare(
+        column: int,
+        expected_value: Optional[str],
+        given_value: Optional[str],
+    ) -> Optional[str]:
+        if expected_value == given_value:
+            return None
+
+        if expected_value is None:
+            return f'column {column} «{given_value}» unnecessary'
+        elif given_value is None:
+            return f'need column {column} «{expected_value}»'
+
+        return f'column {column} «{given_value}» not equal expected «{expected_value}»'
+
+    @staticmethod
+    def _sorted_dict(_dict: Dict) -> List:
+        return sorted(_dict.items(), key=lambda x: x[0])
+
+    @staticmethod
+    def _dict_value(value: Optional[Tuple[int, str]]) -> Optional[str]:
+        return value[1] if value else None
+
+    def check_column_headers(
+        self,
+        expected_headers: Dict[int, str],
+        given_headers: Dict[int, str],
+    ) -> List[str]:
+        err_messages: List[str] = []
+        for expected, given in itertools.zip_longest(
+            self._sorted_dict(expected_headers),
+            self._sorted_dict(given_headers),
+        ):
+            err_message = self._column_header_compare(
+                (expected or given)[0] + 1,
+                self._dict_value(expected),
+                self._dict_value(given),
+            )
+            if err_message:
+                err_messages.append(err_message)
+        return err_messages
+
     def iterate_file_rows(self) -> Iterator[Tuple[int, List[Any]]]:
         raise NotImplementedError
 
-    def parse_row(self, row: List[Any], row_index: int) -> Dict:
+
+    def parse(self) -> None:
+        data = []
+
+        for row_index, row in self.iterate_file_rows():
+            try:
+                row_data = self.parse_row(row, row_index)
+            except SkipRow:
+                pass
+            else:
+                data.append(row_data)
+
+        self.cleaned_data = self.clean(data)
+
+    def parse_row(self, row: List[Any], row_index: int, worksheet_title: str = None) -> Dict:
         row_data = {}
+        if worksheet_title:
+            row_data['worksheet'] = worksheet_title
         row_has_errors = False
 
         for column in self.columns:
@@ -65,12 +126,17 @@ class BaseParser(ParserMixin):
                 row_data[column.name] = self.parse_column(row, column, row_index)
             except ColumnError as e:
                 row_has_errors = True
-                self.add_errors(e.messages, row_index=row_index, col_index=column.index)
+                self.add_errors(
+                    e.messages,
+                    row_index=row_index,
+                    col_index=column.index,
+                    worksheet_title=worksheet_title,
+                )
 
         if row_has_errors:
             raise SkipRow('Not processed because the string contains errors.')
 
-        return self.clean_row(row_data, row, row_index)
+        return self.clean_row(row_data, row, row_index, worksheet_title=worksheet_title)
 
     def parse_column(self, row: List[Any], column: Column, row_index: int) -> Any:
         try:
@@ -89,12 +155,12 @@ class BaseParser(ParserMixin):
 
         return value
 
-    def clean_row(self, row_data: Dict, row: List[Any], row_index: int) -> Dict:
+    def clean_row(self, row_data: Dict, row: List[Any], row_index: int, worksheet_title: str = None) -> Dict:
         if self.skip_empty_rows and all((row_data.get(column.name) is None for column in self.columns)):
             raise SkipRow
 
-        row_data = self.clean_row_required_columns(row_data, row, row_index)
-        row_data = self.clean_unique_together_values(row_data, row, row_index)
+        row_data = self.clean_row_required_columns(row_data, row, row_index, worksheet_title=worksheet_title)
+        row_data = self.clean_unique_together_values(row_data, row, row_index, worksheet_title=worksheet_title)
 
         if self.add_file_path:
             row_data['file_path'] = self.file_path
@@ -103,14 +169,16 @@ class BaseParser(ParserMixin):
 
         return row_data
 
-    def clean_row_required_columns(self, row_data: Dict, row: List[Any], row_index: int) -> Dict:
+    def clean_row_required_columns(
+        self, row_data: Dict, row: List[Any], row_index: int, worksheet_title: str = None,
+    ) -> Dict:
         has_empty_required_columns = False
 
         for column in self.columns:
             if column.required and row_data.get(column.name) is None:
                 self.add_errors(
                     f'Column {column.header or column.name} is required.',
-                    row_index=row_index, col_index=column.index,
+                    row_index=row_index, col_index=column.index, worksheet_title=worksheet_title,
                 )
                 has_empty_required_columns = True
 
@@ -119,7 +187,9 @@ class BaseParser(ParserMixin):
 
         return row_data
 
-    def clean_unique_together_values(self, row_data: Dict, row: List[Any], row_index: int) -> Dict:
+    def clean_unique_together_values(
+        self, row_data: Dict, row: List[Any], row_index: int, worksheet_title: str = None,
+    ) -> Dict:
         is_not_unique_row = False
 
         if not self._unique_together:
@@ -140,7 +210,7 @@ class BaseParser(ParserMixin):
                     ))
                     self.add_errors(
                         f'{error} is a duplicate of row {duplicate_row}',
-                        row_index=row_index,
+                        row_index=row_index, worksheet_title=worksheet_title,
                     )
                     is_not_unique_row = True
                 else:
@@ -160,7 +230,7 @@ class BaseParser(ParserMixin):
     def clean_unique_value(self, column: Column, value: Any, row_index: int) -> Any:
         if value is not None and column.unique:
             duplicate_row = self._unique_column_values[column.name].get(value, None)
-            if duplicate_row:
+            if duplicate_row is not None:
                 raise ColumnError(f'value {value} is a duplicate of row {duplicate_row}')
             else:
                 self._unique_column_values[column.name][value] = row_index
@@ -169,11 +239,19 @@ class BaseParser(ParserMixin):
     def clean(self, data: List) -> List:
         return data
 
-    def add_errors(self, messages: Union[str, List], row_index: int = None, col_index: int = None) -> None:
+    def add_errors(
+        self,
+        messages: Union[str, List],
+        row_index: int = None,
+        col_index: int = None,
+        worksheet_title: str = None,
+    ) -> None:
         if not isinstance(messages, list):
             messages = [messages]
         for message in messages:
             error = []
+            if worksheet_title is not None:
+                error.append(f'worksheet: {worksheet_title}')
             if row_index is not None:
                 error.append(f'row: {row_index}')
             if col_index is not None:

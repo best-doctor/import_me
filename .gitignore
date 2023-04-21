@@ -70,6 +70,7 @@ target/
 # pyenv
 .python-version
 /env
+/venv
 
 # pipenv
 #   According to pypa/pipenv#598, it is recommended to include Pipfile.lock in version control.
@@ -110,3 +111,4 @@ dmypy.json
 # End of https://www.gitignore.io/api/python
 
 .idea/
+.vscode/

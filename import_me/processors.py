@@ -83,7 +83,22 @@ class MultipleProcessor(BaseProcessor):
 
 
 class StringProcessor(BaseProcessor):
+    def __init__(
+        self, strip_chars: str = None,
+        strip_whitespace: bool = True,
+        float_fix: bool = False,
+        **kwargs: Any,
+    ) -> None:
+        super().__init__(**kwargs)
+
+        self.strip_chars = WHITESPACES if strip_whitespace else ''
+        if strip_chars:
+            self.strip_chars += strip_chars
+        self.float_fix = float_fix
+
     def process_value(self, value: Any) -> Optional[str]:
+        if self.float_fix and isinstance(value, float) and str(value).endswith('.0'):
+            value = str(value)[:-2]
         if not isinstance(value, str):
             value = str(value)
 
@@ -91,6 +106,20 @@ class StringProcessor(BaseProcessor):
 
         if value:
             return value
+
+
+class LimitedStringProcessor(StringProcessor):
+    def __init__(self, max_length: int, **kwargs: Any) -> None:
+        super().__init__(**kwargs)
+
+        self.max_length = max_length
+
+    def process_value(self, value: Any) -> Any:
+        str_value = super().process_value(value)
+        if str_value and len(str_value) > self.max_length:
+            raise ColumnError(f'"{value}" exceeds max length {self.max_length}')
+
+        return str_value
 
 
 class IntegerProcessor(BaseProcessor):
@@ -116,6 +145,21 @@ class IntegerProcessor(BaseProcessor):
             raise ColumnError(f'{value} is not an integer.')
 
         return int_value
+
+
+class IntegerRangeProcessor(IntegerProcessor):
+    def __init__(self, min_value: int, max_value: int, **kwargs: Any) -> None:
+        super().__init__(**kwargs)
+
+        self.min_value = min_value
+        self.max_value = max_value
+
+    def process_value(self, value: Any) -> Any:
+        value = super().process_value(value)
+        if not (self.min_value < value <= self.max_value):
+            raise ColumnError(f'{value} is not in range ({self.min_value}..{self.max_value}].')
+
+        return value
 
 
 class FloatProcessor(BaseProcessor):
@@ -146,6 +190,23 @@ class DecimalProcessor(BaseProcessor):
                 raise ColumnError(f'{value} is not a floating point number.')
 
         return decimal_value
+
+
+class DecimalRangeProcessor(DecimalProcessor):
+    def __init__(
+        self, min_value: Decimal, max_value: Decimal, **kwargs: Any,
+    ) -> None:
+        super().__init__(**kwargs)
+
+        self.min_value = min_value
+        self.max_value = max_value
+
+    def process_value(self, value: Any) -> Any:
+        value = super().process_value(value)
+        if not (self.min_value < value <= self.max_value):
+            raise ColumnError(f'{value} is not in range ({self.min_value}..{self.max_value}].')
+
+        return value
 
 
 class BooleanProcessor(BaseProcessor):
@@ -238,6 +299,19 @@ class StringIsNoneProcessor(BaseProcessor):
             if symbols.issubset(self.none_symbols):
                 return None
         return value
+
+
+class StringsArrayProcessor(BaseProcessor):
+    def process_value(self, value: Any) -> Optional[List[str]]:
+        values = super().process_value(value)
+        if values is None:
+            return None
+
+        result_values = []
+        for value in values.split(','):
+            result_values.append(value.strip(self.strip_chars))
+
+        return result_values
 
 
 class ChoiceProcessor(BaseProcessor):
