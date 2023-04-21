@@ -141,7 +141,7 @@ class BaseMultipleSheetsXLSXParser(BaseParser):
             index = self.first_data_row_index - 1
         return index
 
-    def parse_data(self, raise_errors: bool = False) -> None:
+    def parse_data(self, raise_errors: bool = False, *args: Any, **kwargs: Any) -> None:
         try:
             self._parse()
         except Exception as e:
