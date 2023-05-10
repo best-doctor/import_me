@@ -27,7 +27,7 @@ flake8-class-attributes-order==0.1.0
 flake8-broken-line==0.2.0
 flake8-tidy-imports==4.1.0
 flake8-typing-imports==1.9.0
-safety==1.9.0
+safety==2.3.5
 dlint==0.10.3
 flake8-if-statements==0.1.0
 flake8-functions==0.0.4
