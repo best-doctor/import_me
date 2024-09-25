@@ -1,9 +1,11 @@
 import datetime
 import string
+import typing
+
 import pytz.exceptions
 from decimal import Decimal, InvalidOperation
 from pytz import timezone as check_timezone
-from typing import Callable, Collection, Any, Optional, Sequence, Dict, List, Union
+from typing import Callable, Collection, Any, Sequence, Dict, List
 
 from dateutil.parser import parse
 from email_validator import validate_email, EmailNotValidError
@@ -29,8 +31,8 @@ class BaseProcessor:
     none_if_error = False
 
     def __init__(
-        self, raise_error: bool = None, none_if_error: bool = None,
-        strip_chars: str = None, strip_whitespace: bool = True,
+        self, raise_error: typing.Optional[bool] = None, none_if_error: typing.Optional[bool] = None,
+        strip_chars: typing.Optional[str] = None, strip_whitespace: bool = True,
         **kwargs: Any,
     ):
         if raise_error is not None:
@@ -84,7 +86,7 @@ class MultipleProcessor(BaseProcessor):
 
 class StringProcessor(BaseProcessor):
     def __init__(
-        self, strip_chars: str = None,
+        self, strip_chars: typing.Optional[str] = None,
         strip_whitespace: bool = True,
         float_fix: bool = False,
         **kwargs: Any,
@@ -96,7 +98,7 @@ class StringProcessor(BaseProcessor):
             self.strip_chars += strip_chars
         self.float_fix = float_fix
 
-    def process_value(self, value: Any) -> Optional[str]:
+    def process_value(self, value: Any) -> typing.Optional[str]:
         if self.float_fix and isinstance(value, float) and str(value).endswith('.0'):
             value = str(value)[:-2]
         if not isinstance(value, str):
@@ -124,12 +126,12 @@ class LimitedStringProcessor(StringProcessor):
 
 class IntegerProcessor(BaseProcessor):
     @staticmethod
-    def _process_float_value(value: float) -> Optional[int]:
+    def _process_float_value(value: float) -> typing.Optional[int]:
         if value.is_integer():
             return int(value)
 
     @staticmethod
-    def _process_str_value(value: str) -> Optional[int]:
+    def _process_str_value(value: str) -> typing.Optional[int]:
         str_value = value.strip()
         if str_value and str_value.isdigit():
             return int(str_value)
@@ -210,7 +212,12 @@ class DecimalRangeProcessor(DecimalProcessor):
 
 
 class BooleanProcessor(BaseProcessor):
-    def __init__(self, true_values: Sequence = None, false_values: Sequence = None, **kwargs: Any) -> None:
+    def __init__(
+        self,
+        true_values: typing.Optional[Sequence] = None,
+        false_values: typing.Optional[Sequence] = None,
+        **kwargs: Any,
+    ) -> None:
         super().__init__(**kwargs)
         default_true_values = {True, 'True', 'true', '1', 'Да'}
         default_false_values = {False, 'False', 'false', '0', 'Нет'}
@@ -230,8 +237,13 @@ class BooleanProcessor(BaseProcessor):
 
 
 class DateTimeProcessor(BaseProcessor):
-    def __init__(self, formats: Collection[str] = None,
-                 parser: Callable = None, timezone: Union[str, None] = None, **kwargs: Any) -> None:
+    def __init__(
+        self,
+        formats: typing.Optional[Collection[str]] = None,
+        parser: typing.Optional[Callable] = None,
+        timezone: typing.Optional[str] = None,
+        **kwargs: Any,
+    ) -> None:
         super().__init__(**kwargs)
         self.formats = formats
         self.parser = parser or parse
@@ -277,7 +289,7 @@ class DateProcessor(DateTimeProcessor):
 
 
 class EmailProcessor(StringProcessor):
-    def process_value(self, value: Any) -> Optional[str]:
+    def process_value(self, value: Any) -> typing.Optional[str]:
         email_value = super().process_value(value)
         if email_value:
             email_value = lower(email_value)
@@ -289,7 +301,7 @@ class EmailProcessor(StringProcessor):
 
 
 class StringIsNoneProcessor(BaseProcessor):
-    def __init__(self, none_symbols: Sequence = None, **kwargs: Any) -> None:
+    def __init__(self, none_symbols: typing.Optional[Sequence] = None, **kwargs: Any) -> None:
         super().__init__(**kwargs)
         self.none_symbols = set(none_symbols) if none_symbols else None
 
@@ -302,7 +314,7 @@ class StringIsNoneProcessor(BaseProcessor):
 
 
 class StringsArrayProcessor(BaseProcessor):
-    def process_value(self, value: Any) -> Optional[List[str]]:
+    def process_value(self, value: Any) -> typing.Optional[List[str]]:
         values = super().process_value(value)
         if values is None:
             return None
@@ -315,7 +327,12 @@ class StringsArrayProcessor(BaseProcessor):
 
 
 class ChoiceProcessor(BaseProcessor):
-    def __init__(self, choices: Dict[Any, Any], raw_value_processor: BaseProcessor = None, **kwargs: Any) -> None:
+    def __init__(
+        self,
+        choices: Dict[Any, Any],
+        raw_value_processor: typing.Optional[BaseProcessor] = None,
+        **kwargs: Any,
+    ) -> None:
         self.choices = choices
         self.raw_value_processor = raw_value_processor or StringProcessor(**kwargs)
         super().__init__(**kwargs)
@@ -329,7 +346,12 @@ class ChoiceProcessor(BaseProcessor):
 
 
 class ClassifierProcessor(BaseProcessor):
-    def __init__(self, choices: List[Any], raw_value_processor: BaseProcessor = None, **kwargs: Any) -> None:
+    def __init__(
+        self,
+        choices: List[Any],
+        raw_value_processor: typing.Optional[BaseProcessor] = None,
+        **kwargs: Any,
+    ) -> None:
         self.choices = choices
         self.raw_value_processor = raw_value_processor or (lambda raw_value: raw_value)
         super().__init__(**kwargs)
