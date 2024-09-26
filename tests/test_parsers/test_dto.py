@@ -133,7 +133,7 @@ def test_dataclass_dto_xlsx_parser_clean_column(xlsx_file_factory):
     assert persons.parsed_items[1].first_name == 'Petr'
 
 
-def test_parser_unique_column(xlsx_file_factory):
+def test_dataclass_dto_xlsx_parser_unique_column(xlsx_file_factory):
     @dataclasses.dataclass
     class IdDto(DataclassImportableDtoMixin):
         row_index: int
@@ -322,7 +322,7 @@ def test_pydantic_dto_xlsx_parser_clean_column(xlsx_file_factory):
     assert persons.parsed_items[1].first_name == 'Petr'
 
 
-def test_parser_unique_column(xlsx_file_factory):
+def test_pydantic_dto_xlsx_parser_unique_column(xlsx_file_factory):
     class IdDto(pydantic.BaseModel, PydanticImportableDtoMixin):
         row_index: int
         id_: int = pydantic.Field(**{META_UNIQUE: True})
