@@ -1,4 +1,5 @@
 import re
+import typing
 from typing import Callable
 
 from import_me.constants import COLUMN_NAME_PATTERN
@@ -7,8 +8,8 @@ from import_me.exceptions import ParserError
 
 class Column:
     def __init__(
-        self, name: str, index: int, processor: Callable = None,
-        header: str = None, validate_header: bool = True,
+        self, name: str, index: int, processor: typing.Optional[Callable] = None,
+        header: typing.Optional[str] = None, validate_header: bool = True,
         required: bool = False, unique: bool = False,
     ):
         self.name = name

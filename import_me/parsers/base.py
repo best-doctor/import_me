@@ -3,6 +3,7 @@ from __future__ import annotations
 import collections
 import itertools
 import pathlib
+import typing
 from typing import TYPE_CHECKING
 
 from import_me.columns import Column
@@ -20,6 +21,9 @@ class ParserMixin:
     def __init__(self, *args: Any, **kwargs: Any) -> None:
         self.cleaned_data: List[Dict[str, Any]] = []
         self.errors: List[str] = []
+        self.errors_by_row: collections.defaultdict[Optional[int], List[str]] = (
+            collections.defaultdict(list)
+        )
 
     @property
     def has_errors(self) -> bool:
@@ -34,7 +38,11 @@ class BaseParser(ParserMixin):
     unique_together: List[List[str]]
 
     def __init__(
-        self, file_path: Union[pathlib.Path, str] = None, file_contents: IO = None, *args: Any, **kwargs: Any,
+        self,
+        file_path: Optional[Union[pathlib.Path, str]] = None,
+        file_contents: Optional[IO] = None,
+        *args: Any,
+        **kwargs: Any,
     ) -> None:
         super().__init__(*args, **kwargs)
         self.file_path = file_path
@@ -49,7 +57,12 @@ class BaseParser(ParserMixin):
     def _unique_together(self) -> Tuple[Tuple[str, ...], ...]:
         if '_unique_together' not in self.__dict__:
             if hasattr(self, 'unique_together'):
-                value = tuple((tuple(unique_together_columns) for unique_together_columns in self.unique_together))
+                value = tuple(
+                    (
+                        tuple(unique_together_columns)
+                        for unique_together_columns in self.unique_together
+                    ),
+                )
             else:
                 value = ()
             self.__dict__['_unique_together'] = value
@@ -114,7 +127,7 @@ class BaseParser(ParserMixin):
 
         self.cleaned_data = self.clean(data)
 
-    def parse_row(self, row: List[Any], row_index: int, worksheet_title: str = None) -> Dict:
+    def parse_row(self, row: List[Any], row_index: int, worksheet_title: Optional[str] = None) -> Dict:
         row_data = {}
         if worksheet_title:
             row_data['worksheet'] = worksheet_title
@@ -154,7 +167,7 @@ class BaseParser(ParserMixin):
 
         return value
 
-    def clean_row(self, row_data: Dict, row: List[Any], row_index: int, worksheet_title: str = None) -> Dict:
+    def clean_row(self, row_data: Dict, row: List[Any], row_index: int, worksheet_title: Optional[str] = None) -> Dict:
         if self.skip_empty_rows and all((row_data.get(column.name) is None for column in self.columns)):
             raise SkipRow
 
@@ -169,7 +182,7 @@ class BaseParser(ParserMixin):
         return row_data
 
     def clean_row_required_columns(
-        self, row_data: Dict, row: List[Any], row_index: int, worksheet_title: str = None,
+        self, row_data: Dict, row: List[Any], row_index: int, worksheet_title: Optional[str] = None,
     ) -> Dict:
         has_empty_required_columns = False
 
@@ -187,7 +200,7 @@ class BaseParser(ParserMixin):
         return row_data
 
     def clean_unique_together_values(
-        self, row_data: Dict, row: List[Any], row_index: int, worksheet_title: str = None,
+        self, row_data: Dict, row: List[Any], row_index: int, worksheet_title: Optional[str] = None,
     ) -> Dict:
         is_not_unique_row = False
 
@@ -241,9 +254,9 @@ class BaseParser(ParserMixin):
     def add_errors(
         self,
         messages: Union[str, List],
-        row_index: int = None,
-        col_index: int = None,
-        worksheet_title: str = None,
+        row_index: Optional[int] = None,
+        col_index: Optional[int] = None,
+        worksheet_title: Optional[str] = None,
     ) -> None:
         if not isinstance(messages, list):
             messages = [messages]
@@ -257,6 +270,7 @@ class BaseParser(ParserMixin):
                 error.append(f'column: {col_index}')
             error.append(message)
             self.errors.append(', '.join(error))
+            self.errors_by_row[row_index].append(', '.join(error))
 
     def parse_data(self, raise_errors: bool = False, *args: Any, **kwargs: Any) -> None:
         try:
@@ -291,7 +305,13 @@ class BaseMultipleFileParser(ParserMixin):
     dir_path: pathlib.Path
     filename_patterns: List[str]
 
-    def __init__(self, dir_path: pathlib.Path = None, *args: Any, **kwargs: Any) -> None:
+    def __init__(
+        self,
+        dir_path:
+        typing.Optional[pathlib.Path] = None,
+        *args: Any,
+        **kwargs: Any,
+    ) -> None:
         super().__init__(*args, **kwargs)
         if dir_path:
             self.dir_path = dir_path
